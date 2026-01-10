@@ -96,7 +96,6 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- ICONS ---
-        // Robust SVG Definitions
         const Icon = ({ path, size = 24, className = "", fill = "none", strokeWidth = 2 }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {path}
@@ -120,7 +119,7 @@
             FileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
             Package: <><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-9 5.19"/><path d="m21 16-9 5.19"/><path d="m21 16-9-5.19"/><path d="M12 22v-9"/><path d="m12 13 9-5.19"/><path d="m12 13-9-5.19"/></>,
             CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
-            Message: <><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></>,
+            Message: <><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></>,
             Share: <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></>,
             Printer: <><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></>,
             Copy: <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
@@ -402,8 +401,23 @@
                         <StatWidget icon={Icons.Users} label="Patients" value={todayStats.count} color="bg-gradient-to-br from-emerald-400 to-teal-500" subtext="Total visits today" />
                     </div>
 
-                    {/* Weekly Chart */}
-                    <div className="px-5">
+                    {/* Moved New Consultation Box Here */}
+                    <div className="px-5 mb-8">
+                        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group cursor-pointer transition-transform active:scale-[0.98]">
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="relative z-10">
+                                <h3 className="font-bold text-xl mb-1">New Consultation</h3>
+                                <p className="text-white/90 text-sm mb-5 font-medium">Register a new patient or package.</p>
+                                <button onClick={() => onNewVisit(null)} className="bg-white/25 backdrop-blur-md border border-white/40 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/35 transition-colors flex items-center gap-2 shadow-lg">
+                                    <Icon path={Icons.Plus} size={18} /> Start Now
+                                </button>
+                            </div>
+                            <div className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12 scale-125 transition-transform group-hover:scale-150 duration-700"><Icon path={Icons.Users} size={160} fill="currentColor" /></div>
+                        </div>
+                    </div>
+
+                    {/* Moved Weekly Chart Here */}
+                    <div className="px-5 mb-8">
                          <RevenueChart visits={visits} />
                     </div>
 
@@ -415,20 +429,6 @@
                             ))}
                         </div>
                     )}
-
-                    <div className="px-5 mb-8">
-                        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group cursor-pointer transition-transform active:scale-[0.98]">
-                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="relative z-10">
-                                <h3 className="font-bold text-xl mb-1">New Consultation</h3>
-                                <p className="text-white/90 text-sm mb-5 font-medium">Register a new patient or package.</p>
-                                <button onClick={() => onNewVisit({})} className="bg-white/25 backdrop-blur-md border border-white/40 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/35 transition-colors flex items-center gap-2 shadow-lg">
-                                    <Icon path={Icons.Plus} size={18} /> Start Now
-                                </button>
-                            </div>
-                            <div className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12 scale-125 transition-transform group-hover:scale-150 duration-700"><Icon path={Icons.Users} size={160} fill="currentColor" /></div>
-                        </div>
-                    </div>
 
                     <div className="px-5">
                         <div className="flex justify-between items-center mb-4 px-1">
@@ -693,11 +693,20 @@
             );
         };
 
-        const SettingsView = ({ onBackup, onRestore, onReset, onExportCSV, setPin, onBack }) => {
+        const SettingsView = ({ onBackup, onRestore, onReset, onExportCSV, setPin, onBack, currentPin }) => {
             const fileRef = useRef();
             const [newPin, setNewPin] = useState('');
             const handleFile = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { try { const data = JSON.parse(ev.target.result); if(confirm('Restore data?')) onRestore(data); } catch { alert("Invalid File"); } }; reader.readAsText(file); };
             const savePin = () => { if (newPin.length === 4) { setPin(newPin); alert("PIN Updated"); setNewPin(''); } else alert("PIN must be 4 digits"); };
+            const handleFactoryReset = () => {
+                const userPin = prompt("Enter PIN to confirm Factory Reset:");
+                if (userPin === currentPin) {
+                    onReset();
+                } else {
+                    alert("Incorrect PIN. Reset cancelled.");
+                }
+            };
+
             return (
                 <div className="page-enter pb-24 min-h-screen">
                     <div className="glass-header sticky top-0 z-20 px-4 pt-safe pb-4 flex items-center gap-2">
@@ -707,7 +716,7 @@
                     <div className="px-4 mt-6 space-y-6">
                         <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Data Management</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={onBackup} className="w-full p-4 flex items-center gap-4 border-b border-gray-200/50 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><Icon path={Icons.Download} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Backup Data (JSON)</span></button><button onClick={() => fileRef.current.click()} className="w-full p-4 flex items-center gap-4 border-b border-gray-200/50 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-green-100 text-green-600 flex items-center justify-center"><Icon path={Icons.Upload} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Restore Data</span><input type="file" ref={fileRef} onChange={handleFile} className="hidden" accept=".json"/></button><button onClick={onExportCSV} className="w-full p-4 flex items-center gap-4 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><Icon path={Icons.FileText} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Export to Excel (CSV)</span></button></div></div>
                         <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Security</div><div className="glass-panel rounded-3xl p-4 flex gap-3"><input type="number" placeholder="New PIN" value={newPin} onChange={e => setNewPin(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none font-bold text-center tracking-widest placeholder-gray-400" /><button onClick={savePin} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-black/20 active:scale-95 transition-transform">Set PIN</button></div></div>
-                        <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Danger Zone</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={onReset} className="w-full p-4 flex items-center gap-4 text-red-600 active:bg-red-50/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center"><Icon path={Icons.Trash} size={18}/></div><span className="font-bold text-[16px]">Factory Reset</span></button></div></div>
+                        <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Danger Zone</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={handleFactoryReset} className="w-full p-4 flex items-center gap-4 text-red-600 active:bg-red-50/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center"><Icon path={Icons.Trash} size={18}/></div><span className="font-bold text-[16px]">Factory Reset</span></button></div></div>
                     </div>
                 </div>
             );
@@ -1138,7 +1147,7 @@
                             {view === 'dashboard' && <Dashboard visits={visits} setView={setView} onNewVisit={() => setModalData({})} onCheckIn={handleCheckIn} lastBackup={lastBackup} />}
                             {view === 'visits' && <VisitsList visits={visits} onEdit={setModalData} onDelete={handleDeleteVisit} onRepeat={handleRepeatVisit} />}
                             {view === 'finances' && <ReportsView visits={visits} expenses={expenses} onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense} />}
-                            {view === 'settings' && <SettingsView onBackup={handleBackup} onRestore={handleRestore} onReset={handleReset} onExportCSV={handleExportCSV} setPin={setPin} onBack={() => setView('dashboard')} />}
+                            {view === 'settings' && <SettingsView onBackup={handleBackup} onRestore={handleRestore} onReset={handleReset} onExportCSV={handleExportCSV} setPin={setPin} onBack={() => setView('dashboard')} currentPin={pin} />}
                         </div>
                         <div className="glass-tab pb-safe px-6 h-[88px] flex justify-between items-start pt-3 shrink-0"><NavTab active={view === 'dashboard'} onClick={() => setView('dashboard')} icon={Icons.Home} label="Today" /><NavTab active={view === 'visits'} onClick={() => setView('visits')} icon={Icons.Users} label="Patients" /><NavTab active={view === 'finances'} onClick={() => setView('finances')} icon={Icons.Chart} label="Reports" /><NavTab active={view === 'settings'} onClick={() => setView('settings')} icon={Icons.Settings} label="Settings" /></div>
                     </div>
