@@ -168,7 +168,6 @@
         // --- WRAPPERS ---
         const VibrantWrapper = ({ children }) => (
             <div className="h-[100dvh] w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden flex flex-col">
-                {/* Animated Orbs Layer */}
                 <div className="fixed inset-0 pointer-events-none">
                     <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
                     <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-purple-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
@@ -382,7 +381,7 @@
                             <div className="relative z-10">
                                 <h3 className="font-bold text-xl mb-1">New Consultation</h3>
                                 <p className="text-white/90 text-sm mb-5 font-medium">Register a new patient or package.</p>
-                                <button onClick={() => onNewVisit(null)} className="bg-white/25 backdrop-blur-md border border-white/40 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/35 transition-colors flex items-center gap-2 shadow-lg">
+                                <button onClick={() => onNewVisit({})} className="bg-white/25 backdrop-blur-md border border-white/40 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/35 transition-colors flex items-center gap-2 shadow-lg">
                                     <Icon path={Icons.Plus} size={18} /> Start Now
                                 </button>
                             </div>
@@ -723,6 +722,17 @@
                     setPastVisits(history.slice(0, 3)); // Top 3
                 }
             }, [form.phone, visits, form.id]);
+            
+            // Patient Loyalty Stats
+            const patientStats = useMemo(() => {
+                if (form.phone && visits) {
+                     const history = visits.filter(v => v.phone === form.phone);
+                     const totalSpent = history.reduce((sum, v) => sum + (parseFloat(v.fee) || 0), 0);
+                     return { visits: history.length, spent: totalSpent };
+                }
+                return null;
+            }, [form.phone, visits]);
+
 
             const handlePaymentChange = (val) => {
                 let updates = { paymentMode: val };
