@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DM Neuro">
     <meta name="format-detection" content="telephone=no">
-    <title>DM Neuro Manager v43.0 (Platinum)</title>
+    <title>DM Neuro Manager v43.1 (Platinum)</title>
     
     <!-- SYSTEM LOGGER -->
     <script>
@@ -270,7 +270,6 @@
                         if (!v || !v.date) return; const k = getKey(v.date); if (!groups[k]) groups[k] = initGroup(k);
                         groups[k].income += parseFloat(v.fee) || 0; groups[k].visitCount += 1;
                         const ref = v.referralType || 'Walk-in'; 
-                        // Enhanced matching to ignore spaces
                         if (ref.trim() === 'Dr. Venkat Reddy') groups[k].drReddy += 1; 
                         else if (ref.trim() === 'Walk-in') groups[k].walkIn += 1; 
                         else groups[k].otherRef += 1;
@@ -286,7 +285,6 @@
                 const handleRowClick = (row) => { if (reportType === 'Daily') setView('visits', { filterDate: row.key }); else if (reportType === 'Monthly') setView('visits', { filterMonth: row.key }); else if (reportType === 'Weekly') setView('visits', { filterWeek: row.key }); };
                 const Chart = ({ data }) => {
                     const chartData = data.slice(0, 10).reverse();
-                    // FIX: Empty Chart protection
                     if (chartData.length === 0) return (<div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm mb-4 text-center text-slate-400 no-print"><i data-lucide="bar-chart-2" className="w-8 h-8 mx-auto mb-2 opacity-30"></i><p className="text-xs">No data for chart</p></div>);
                     const maxVal = Math.max(...chartData.map(d => Math.max(d.income, d.expense)), 1);
                     return (<div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 no-print"><h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Trend Analysis (Last 10)</h4><div className="flex justify-between items-end h-32 gap-2">{chartData.map((d, i) => (<div key={i} className="flex flex-col items-center flex-1 gap-1"><div className="w-full flex gap-1 justify-center h-full items-end"><div className="w-2 bg-emerald-400 rounded-t-sm transition-all" style={{ height: `${(d.income / maxVal) * 80}%` }} title={`Inc: ${d.income}`}></div><div className="w-2 bg-red-400 rounded-t-sm transition-all" style={{ height: `${(d.expense / maxVal) * 80}%` }} title={`Exp: ${d.expense}`}></div></div><span className="text-[9px] text-slate-400 rotate-0 truncate w-full text-center">{d.label.split(' ')[0]}</span></div>))}</div></div>);
@@ -323,7 +321,6 @@
                     onBackupDone();
                 };
                 const handleCSV = () => {
-                    // FIX: Newline protection for CSV export
                     const safeCSV = (str) => `"${(str || '').toString().replace(/"/g, '""').replace(/\n/g, ' ')}"`;
                     let csv = "Date,Time,Name,Phone,Treatment,Fee,Mode,Referral\n" + visits.map(v => `${v.date},${v.time || ''},${safeCSV(v.name)},${safeCSV(v.phone)},${safeCSV(v.treatment)},${v.fee},${v.paymentMode},${safeCSV(v.referralType)}`).join("\n");
                     const link = document.createElement("a");
@@ -339,7 +336,6 @@
                         try {
                             const data = JSON.parse(ev.target.result);
                             let v = Array.isArray(data) ? data : (data.visits || []);
-                            // FIX: Add sanitization for imports to ensure all records have IDs
                             v = v.map(item => ({...item, id: item.id || generateId() }));
                             let x = data.expenses || [];
                             x = x.map(item => ({...item, id: item.id || generateId() }));
@@ -418,7 +414,6 @@
             };
 
             const EntryForm = ({ initialData, onSave, onCancel, visits }) => {
-                // FIX: Ensure safe string parsing
                 const getInitialMode = () => { if (!initialData) return 'Cash'; const mode = initialData.paymentMode || ''; if (mode.startsWith('Package Advance')) return 'Package Advance'; return mode || 'Cash'; };
                 const getInitialAdvanceMethod = () => { if (!initialData || !initialData.paymentMode) return 'Cash'; const mode = initialData.paymentMode || ''; if (!mode.startsWith('Package Advance')) return 'Cash'; const match = mode.match(/\((.*)\)/); return match ? match[1] : 'Cash'; };
 
@@ -449,17 +444,22 @@
                 const handleModeChange = (e) => { const val = e.target.value; setForm(prev => ({ ...prev, paymentMode: val, fee: val === 'FOC' ? 0 : prev.fee, packageId: val === 'Package Visit' ? prev.packageId : null })); };
 
                 return (
-                    <div className="bg-white min-h-full pb-20 fade-in">
-                        <div className="sticky top-0 bg-white/80 backdrop-blur-md z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center mb-4"><button onClick={onCancel} className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-full"><i data-lucide="arrow-left" size={20}></i></button><h2 className="font-bold text-lg">{initialData ? 'Edit Record' : 'New Patient'}</h2><div className="w-8"></div></div>
-                        <div className="px-5 space-y-4">
-                            <div className="flex gap-2"><input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="flex-[2] p-3 bg-slate-50 rounded-xl font-medium outline-none" /><input type="time" value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="flex-1 p-3 bg-slate-50 rounded-xl font-medium outline-none" /></div>
-                            <div className="relative"><input type="tel" placeholder="Phone (Auto-Lookup)" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl outline-none" />{foundPatient && <div className="absolute top-full left-0 w-full bg-blue-600 text-white p-2 rounded-lg z-10 mt-1 flex justify-between items-center text-xs"><span className="font-bold">Found: {foundPatient.name}</span><button type="button" onClick={autoFill} className="bg-white text-blue-600 px-2 py-1 rounded font-bold">Use</button></div>}</div>
-                            <input type="text" placeholder="Patient Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl font-semibold outline-none" />
-                            <div className="grid grid-cols-2 gap-2">{['Dr. Venkat Reddy', 'Walk-in', 'Other'].map(t => (<button key={t} onClick={() => setForm({...form, referralType: t})} className={`py-2 px-2 rounded-lg text-xs font-bold border ${form.referralType === t ? 'bg-slate-800 text-white' : 'bg-white text-slate-500'}`}>{t}</button>))}</div>
-                            <div className="grid grid-cols-2 gap-4"><input type="number" onWheel={e => e.target.blur()} placeholder="Fee (₹)" value={form.fee} onChange={e => setForm({...form, fee: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none" /><select value={form.paymentMode} onChange={handleModeChange} className="w-full p-3 bg-slate-50 rounded-xl outline-none font-medium">{form.paymentMode && form.paymentMode.startsWith('Package Visit') && <option>Package Visit</option>}<option>Cash</option><option>UPI</option><option>Credit</option><option>Package Advance</option><option>FOC</option></select></div>
+                    <div className="fade-in pb-20">
+                        <div className="sticky top-0 bg-slate-50/95 backdrop-blur-md z-20 -mx-5 px-5 py-4 border-b border-slate-200 flex justify-between items-center mb-6 shadow-sm -mt-5">
+                            <button onClick={onCancel} className="p-2 -ml-2 text-slate-500 hover:bg-slate-200 rounded-full transition-colors"><i data-lucide="arrow-left" size={20}></i></button>
+                            <h2 className="font-bold text-lg text-slate-800">{initialData ? 'Edit Record' : 'New Patient'}</h2>
+                            <div className="w-8"></div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="flex gap-2"><input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="flex-[2] p-3 bg-white border border-slate-200 rounded-xl font-medium outline-none focus:border-primary-500 transition-colors" /><input type="time" value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-medium outline-none focus:border-primary-500 transition-colors" /></div>
+                            <div className="relative"><input type="tel" placeholder="Phone (Auto-Lookup)" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-primary-500 transition-colors" />{foundPatient && <div className="absolute top-full left-0 w-full bg-blue-600 text-white p-2 rounded-lg z-10 mt-1 flex justify-between items-center text-xs"><span className="font-bold">Found: {foundPatient.name}</span><button type="button" onClick={autoFill} className="bg-white text-blue-600 px-2 py-1 rounded font-bold">Use</button></div>}</div>
+                            <input type="text" placeholder="Patient Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-3 bg-white border border-slate-200 rounded-xl font-semibold outline-none focus:border-primary-500 transition-colors" />
+                            <div className="grid grid-cols-2 gap-2">{['Dr. Venkat Reddy', 'Walk-in', 'Other'].map(t => (<button key={t} onClick={() => setForm({...form, referralType: t})} className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all ${form.referralType === t ? 'bg-slate-800 text-white border-slate-800 shadow' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>{t}</button>))}</div>
+                            <div className="grid grid-cols-2 gap-4"><input type="number" onWheel={e => e.target.blur()} placeholder="Fee (₹)" value={form.fee} onChange={e => setForm({...form, fee: e.target.value})} className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold outline-none focus:border-primary-500 transition-colors" /><select value={form.paymentMode} onChange={handleModeChange} className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none font-medium focus:border-primary-500 transition-colors">{form.paymentMode && form.paymentMode.startsWith('Package Visit') && <option>Package Visit</option>}<option>Cash</option><option>UPI</option><option>Credit</option><option>Package Advance</option><option>FOC</option></select></div>
                             {form.paymentMode === 'Package Advance' && (<div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in space-y-3"><div><label className="block text-xs font-bold text-purple-700 uppercase mb-1">Total Days / Sessions</label><input type="number" onWheel={e => e.target.blur()} placeholder="e.g. 7 or 10" value={form.totalSessions} onChange={e => setForm({...form, totalSessions: e.target.value, isPackagePurchase: true})} className="w-full p-3 bg-white border border-purple-200 rounded-xl font-bold text-purple-800 outline-none" /></div><div><label className="block text-xs font-bold text-purple-700 uppercase mb-1">Paid Via</label><div className="flex bg-white rounded-xl border border-purple-200 p-1">{['Cash', 'UPI', 'Card'].map(m => (<button key={m} onClick={() => setAdvanceMethod(m)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${advanceMethod === m ? 'bg-purple-600 text-white shadow' : 'text-purple-400 hover:bg-purple-50'}`}>{m}</button>))}</div></div></div>)}
-                            <div className="flex flex-wrap gap-2">{['LBA', 'Neck Pain', 'Shoulder', 'Stroke', 'Knee', 'Neuro', 'Ortho'].map(t => (<button key={t} onClick={() => setForm({...form, treatment: t})} className={`px-3 py-1 rounded-full text-xs font-bold border ${form.treatment === t ? 'bg-blue-600 text-white' : 'bg-white text-slate-500'}`}>{t}</button>))}</div>
-                            <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-slate-100 max-w-md mx-auto right-0"><Button variant="primary" className="w-full py-3.5 shadow-xl" onClick={handleSubmit}>Save Record</Button></div>
+                            <div className="flex flex-wrap gap-2">{['LBA', 'Neck Pain', 'Shoulder', 'Stroke', 'Knee', 'Neuro', 'Ortho'].map(t => (<button key={t} onClick={() => setForm({...form, treatment: t})} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${form.treatment === t ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-slate-500 border-slate-200 hover:bg-blue-50'}`}>{t}</button>))}</div>
+                            <div className="pt-6 pb-4"><Button variant="primary" className="w-full py-4 text-base shadow-xl shadow-primary-500/20" onClick={handleSubmit}>Save Record</Button></div>
                         </div>
                     </div>
                 );
@@ -514,7 +514,6 @@
 
                 if (locked) return <LockScreen onUnlock={() => setLocked(false)} currentPin={pin} />;
                 if (view === 'receipt') return <Receipt data={printItem} onBack={() => navigate('visits')} />;
-                if (view === 'entry') return <EntryForm initialData={editItem} onSave={handleSave} onCancel={() => { setEditItem(null); navigate('dashboard'); }} visits={visits} />;
                 if (view === 'data_tools') return <DataToolsView onBack={() => navigate('dashboard')} onImportData={handleImportData} visits={visits} expenses={expenses} onBackupDone={handleBackupDone} onFactoryReset={handleFactoryReset} setPin={setPin} />;
                 
                 return (
@@ -523,6 +522,7 @@
                             {view === 'dashboard' && <Dashboard visits={visits} setView={navigate} onNewVisit={() => { setEditItem(null); navigate('entry'); }} onPackageCheckIn={handlePackageCheckIn} lastBackup={lastBackup} onRenewPackage={handleRenewPackage} />}
                             {view === 'visits' && <VisitsList visits={visits} onEdit={(v) => { setEditItem(v); navigate('entry'); }} onDelete={handleDelete} onPrint={(v) => { setPrintItem(v); navigate('receipt'); }} viewParams={viewParams} />}
                             {view === 'finances' && <FinanceView visits={visits} expenses={expenses} onAddExpense={handleAddExpense} onEditExpense={handleEditExpense} onDeleteExpense={handleDeleteExpense} setView={navigate} />}
+                            {view === 'entry' && <EntryForm initialData={editItem} onSave={handleSave} onCancel={() => { setEditItem(null); navigate('dashboard'); }} visits={visits} />}
                         </div>
                         <div className="fixed bottom-0 w-full max-w-md bg-white/90 backdrop-blur-lg border-t border-slate-200 p-2 flex justify-around items-center z-50 pb-safe no-print">
                             <NavButton active={view === 'dashboard'} onClick={() => navigate('dashboard')} icon="layout-dashboard" label="Home" />
