@@ -96,6 +96,7 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- ICONS ---
+        // Native SVG Icons with fixes for multiple paths (wrapped in fragments)
         const Icon = ({ path, size = 24, className = "", fill = "none", strokeWidth = 2 }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {path}
@@ -722,17 +723,6 @@
                     setPastVisits(history.slice(0, 3)); // Top 3
                 }
             }, [form.phone, visits, form.id]);
-            
-            // Patient Loyalty Stats
-            const patientStats = useMemo(() => {
-                if (form.phone && visits) {
-                     const history = visits.filter(v => v.phone === form.phone);
-                     const totalSpent = history.reduce((sum, v) => sum + (parseFloat(v.fee) || 0), 0);
-                     return { visits: history.length, spent: totalSpent };
-                }
-                return null;
-            }, [form.phone, visits]);
-
 
             const handlePaymentChange = (val) => {
                 let updates = { paymentMode: val };
@@ -816,16 +806,29 @@
             };
 
             const handleGenerateReceipt = () => {
-                const text = `🧾 *Payment Receipt*\n*DM Neuro Physiotherapy and Rehabilitation Centre*\nKompally, Hyderabad - 500014\n\n*Dr. Kiran Madhav T*\nPT, COMT, MIAP\n\nPatient: ${form.name}\nDate: ${formatDate(form.date)}\nTreatment: ${selectedTreatments.filter(t => t !== 'Others').join(', ') + (selectedTreatments.includes('Others') ? ', ' + customTreatment : '')}\nAmount: ${formatCurrency(form.fee)} (${form.paymentMode})\n\nReceived with thanks.`;
+                // Gather full treatment string for receipt to ensure MANUAL therapies are included even if not saved yet
+                let receiptTreatments = selectedTreatments.filter(t => t !== 'Others');
+                if (selectedTreatments.includes('Others')) receiptTreatments.push(customTreatment);
+                if (manualTherapy.dryNeedling.selected) receiptTreatments.push("Dry Needling");
+                if (manualTherapy.kinesio.selected) receiptTreatments.push("Kinesio Taping");
+                if (manualTherapy.others.selected) receiptTreatments.push(manualTherapy.others.name);
+
+                const text = `🧾 *Payment Receipt*\n*DM Neuro Physiotherapy and Rehabilitation Centre*\nKompally, Hyderabad - 500014\n\n*Dr. Kiran Madhav T*\nPT, COMT, MIAP\n\nPatient: ${form.name}\nDate: ${formatDate(form.date)}\nTreatment: ${receiptTreatments.join(', ')}\nAmount: ${formatCurrency(calculatedTotal)} (${form.paymentMode})\n\nReceived with thanks.`;
                 const url = `https://wa.me/91${form.phone}?text=${encodeURIComponent(text)}`;
                 window.open(url, '_blank');
             };
 
             return (
-                <div className="fixed inset-0 w-full md:max-w-3xl mx-auto bg-black/20 backdrop-blur-sm z-50 overflow-y-auto modal-enter">
-                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-                        <div className="glass-header sticky top-0 px-4 py-3 flex justify-between items-center z-20"><button onClick={onCancel} className="text-ios-blue text-[17px] font-medium">Cancel</button><span className="font-bold text-[17px] text-gray-900">{form.id ? 'Edit Visit' : 'New Visit'}</span><button onClick={handleSubmit} className="text-ios-blue font-bold text-[17px]">Done</button></div>
-                        <div className="p-5 space-y-6">
+                <div className="fixed inset-0 w-full md:max-w-3xl mx-auto z-50 flex flex-col bg-white modal-enter">
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+                        
+                        {/* Header */}
+                        <div className="glass-header sticky top-0 px-4 py-4 flex justify-center items-center z-20 border-b border-white/40">
+                            <span className="font-extrabold text-lg text-gray-800 tracking-tight">{form.id ? 'Edit Consultation' : 'New Consultation'}</span>
+                        </div>
+                        
+                        <div className="p-5 space-y-6 pb-6"> {/* pb-6 is enough here as footer is external */}
                             <div className="glass-panel rounded-3xl p-2">
                                 <IOSInput label="Patient Name" placeholder="Enter Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                                 <div className="h-[1px] bg-gray-200/50 mx-4"></div>
@@ -935,12 +938,23 @@
                             )}
 
                             {form.id && (
-                                <div className="flex gap-3 pt-4">
-                                    <button onClick={handleGenerateReceipt} className="flex-1 py-3 bg-white/50 text-ios-blue font-bold rounded-2xl shadow-sm border border-blue-100 flex items-center justify-center gap-2"><Icon path={Icons.Receipt} size={18} /> Receipt</button>
-                                    <button onClick={() => onDelete(form.id)} className="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-2xl shadow-sm border border-red-100 flex items-center justify-center gap-2"><Icon path={Icons.Trash} size={18} /> Delete Record</button>
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={handleGenerateReceipt} className="flex-1 py-3 bg-white/60 text-ios-blue font-bold rounded-2xl shadow-sm border border-blue-100 flex items-center justify-center gap-2"><Icon path={Icons.Receipt} size={18} /> Receipt</button>
+                                    <button onClick={() => onDelete(form.id)} className="flex-1 py-3 bg-red-50/80 text-red-600 font-bold rounded-2xl shadow-sm border border-red-100 flex items-center justify-center gap-2"><Icon path={Icons.Trash} size={18} /> Delete</button>
                                 </div>
                             )}
+                            
+                            {/* Spacer for bottom safe area visual comfort if scrolling */}
+                            <div className="h-4"></div>
                         </div>
+                    </div>
+
+                    {/* Fixed Bottom Action Bar */}
+                    <div className="glass-tab p-4 pb-safe flex gap-3 border-t border-white/50 bg-white/80 backdrop-blur-xl z-50 shrink-0">
+                         <button onClick={onCancel} className="flex-1 py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl active:scale-95 transition-transform">Cancel</button>
+                         <button onClick={handleSubmit} className="flex-[2] py-4 bg-ios-blue text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                            <Icon path={Icons.CheckCircle} size={20} /> {form.id ? 'Save Changes' : 'Save & Done'}
+                         </button>
                     </div>
                 </div>
             );
