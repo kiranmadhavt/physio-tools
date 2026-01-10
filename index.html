@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DM Neuro Manager v31.0 (Stability Patch)</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' },
+                        surface: '#ffffff',
+                        background: '#f8fafc',
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(14, 165, 233, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { background-color: #f8fafc; color: #1e293b; -webkit-font-smoothing: antialiased; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
+        @media print {
+            @page { margin: 1cm; size: auto; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body, #root { background: white; margin: 0; padding: 0; overflow: visible; height: auto; }
+            .print-container { position: relative; width: 100%; height: auto; background: white; padding: 0; }
+            .report-table { font-size: 10pt; width: 100%; border-collapse: collapse; }
+            .report-table th, .report-table td { padding: 4px; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- CONSTANTS ---
+        const CLINIC_DETAILS = {
+            name: 'DM Neuro',
+            subtitle: 'Physiotherapy & Rehab',
+            doctor: 'Dr. Kiran Madhav.T',
+            contact: 'Kompally, Hyderabad | +91 98765 43210'
+        };
+
+        const getToday = () => {
+            const d = new Date();
+            return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        };
+
+        const getCurrentTime = () => {
+            const d = new Date();
+            return d.toTimeString().slice(0, 5);
+        };
+        
+        const formatDate = (dateStr) => {
+            if (!dateStr || typeof dateStr !== 'string') return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const [y, m, d] = parts;
+            const date = new Date(y, m - 1, d);
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
+
+        const formatTimeDisplay = (timeStr) => {
+            if (!timeStr || typeof timeStr !== 'string') return '';
+            let [h, m] = timeStr.split(':');
+            if (!h || !m) return timeStr;
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12; 
+            return `${h}:${m} ${ampm}`;
+        };
+
+        const formatCurrency = (amount) => {
+            const val = parseFloat(amount);
+            if (isNaN(val)) return '₹0';
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+        };
+        
+        const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
+        // --- REPORT LOGIC HELPER ---
+        const getReportKey = (dateStr, type) => {
+            if (!dateStr) return 'Unknown';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return 'Unknown'; 
+
+            const y = d.getFullYear();
+            const m = d.getMonth();
+            
+            if (type === 'Daily') return dateStr;
+            if (type === 'Monthly') return `${y}-${String(m+1).padStart(2,'0')}`;
+            if (type === 'Yearly') return `${y}`;
+            if (type === 'Quarterly') return `${y}-Q${Math.floor(m/3) + 1}`;
+            if (type === 'Weekly') {
+                const start = new Date(y, 0, 1);
+                const days = Math.floor((d - start) / (24 * 60 * 60 * 1000));
+                const week = Math.ceil((days + start.getDay() + 1) / 7);
+                return `${y}-W${String(week).padStart(2, '0')}`;
+            }
+            return dateStr;
+        };
+
+        // --- COMPONENTS ---
+        const Button = ({ children, onClick, variant = "primary", className = "", icon: Icon, disabled = false }) => {
+            const variants = {
+                primary: "bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-500/30 hover:shadow-primary-500/40 border-none",
+                secondary: "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm",
+                danger: "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100",
+                ghost: "text-slate-500 hover:bg-slate-100 border-transparent",
+                dark: "bg-slate-800 text-white shadow-lg shadow-slate-800/30",
+                warning: "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200",
+                success: "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-700"
+            };
+            return (
+                <button onClick={onClick} disabled={disabled} className={`px-4 py-3 rounded-xl font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:pointer-events-none ${variants[variant]} ${className}`}>
+                    {Icon && <Icon size={18} />}
+                    {children}
+                </button>
+            );
+        };
+
+        const Badge = ({ children, type, fee }) => {
+            let style = "bg-slate-100 text-slate-600";
+            const safeType = type || '';
+            
+            if (safeType === 'FOC' || (fee == 0 && safeType !== 'Package Visit')) {
+                 style = "bg-gray-100 text-gray-700 border border-gray-300 font-bold";
+            } else if (safeType === 'Credit') {
+                style = "bg-orange-50 text-orange-600 border border-orange-100";
+            } else if (safeType === 'Cash') {
+                style = "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            } else if (safeType === 'UPI') {
+                style = "bg-blue-50 text-blue-600 border border-blue-100";
+            } else if (safeType.startsWith('Package Advance')) {
+                style = "bg-purple-50 text-purple-600 border border-purple-100";
+            } else if (safeType === 'Package Visit') {
+                style = "bg-slate-100 text-slate-500 border border-slate-200";
+            }
+            
+            const display = (safeType !== 'FOC' && fee == 0 && safeType !== 'Package Visit') ? 'FOC' : children;
+
+            return <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wide ${style}`}>{display}</span>;
+        };
+
+        // --- SECURITY LOCK SCREEN ---
+        const LockScreen = ({ onUnlock, currentPin }) => {
+            const [input, setInput] = useState('');
+            const [error, setError] = useState(false);
+
+            useEffect(() => {
+                if (input.length === 4) {
+                    if (input === currentPin) {
+                        onUnlock();
+                    } else {
+                        setError(true);
+                        const timer = setTimeout(() => { setInput(''); setError(false); }, 500);
+                        return () => clearTimeout(timer);
+                    }
+                }
+            }, [input, currentPin, onUnlock]);
+
+            const handlePress = (num) => {
+                if (input.length < 4) {
+                    setInput(prev => prev + num);
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white fade-in">
+                    <div className="mb-8 text-center">
+                        <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/50">
+                            <i data-lucide="lock" className="w-8 h-8 text-white"></i>
+                        </div>
+                        <h2 className="text-xl font-bold tracking-tight">DM Neuro Manager</h2>
+                        <p className="text-slate-400 text-xs mt-1">Enter Security PIN to Access</p>
+                    </div>
+
+                    <div className={`flex gap-4 mb-8 ${error ? 'shake' : ''}`}>
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} className={`w-4 h-4 rounded-full transition-all ${i < input.length ? 'bg-primary-500 scale-110' : 'bg-slate-700'}`}></div>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 w-full max-w-[280px]">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                            <button key={num} onClick={() => handlePress(num.toString())} className="h-16 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xl font-bold transition-all active:scale-95 shadow-lg shadow-black/20">
+                                {num}
+                            </button>
+                        ))}
+                        <div className="h-16"></div>
+                        <button onClick={() => handlePress('0')} className="h-16 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xl font-bold transition-all active:scale-95 shadow-lg shadow-black/20">0</button>
+                        <button onClick={() => setInput(prev => prev.slice(0, -1))} className="h-16 rounded-2xl bg-transparent text-slate-400 hover:text-white flex items-center justify-center transition-all active:scale-95">
+                            <i data-lucide="delete" className="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <p className="mt-8 text-[10px] text-slate-600">Default PIN: 7177</p>
+                </div>
+            );
+        };
+
+        // --- DASHBOARD VIEW ---
+        const Dashboard = ({ visits, setView, onNewVisit, onPackageCheckIn, lastBackup, onRenewPackage }) => {
+            const [processing, setProcessing] = useState(false);
+
+            const stats = useMemo(() => {
+                const today = getToday();
+                const todayVisits = visits.filter(v => v.date === today);
+                return {
+                    todayIncome: todayVisits.reduce((acc, v) => acc + (parseFloat(v.fee) || 0), 0),
+                    todayCount: todayVisits.length,
+                    totalDue: visits.filter(v => v.paymentMode === 'Credit').reduce((acc, v) => acc + (parseFloat(v.fee) || 0), 0),
+                };
+            }, [visits]);
+
+            const activePackages = useMemo(() => {
+                try {
+                    const purchases = visits.filter(v => v.isPackagePurchase);
+                    const usage = visits.filter(v => v.packageId);
+                    const usageMap = {};
+                    usage.forEach(u => { usageMap[u.packageId] = (usageMap[u.packageId] || 0) + 1; });
+                    return purchases.map(p => ({
+                        ...p, used: usageMap[p.id] || 0, remaining: (parseInt(p.totalSessions || 0) || 0) - (usageMap[p.id] || 0)
+                    })).filter(p => p.remaining > 0);
+                } catch (e) {
+                    console.error("Package Calc Error", e);
+                    return [];
+                }
+            }, [visits]);
+
+            const backupStatus = useMemo(() => {
+                if (!lastBackup) return { status: 'urgent', text: 'Backup Needed!', color: 'bg-red-500' };
+                const days = Math.floor((new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24));
+                if (days > 3) return { status: 'warning', text: `${days} days since backup`, color: 'bg-amber-500' };
+                return { status: 'ok', text: 'Data Safe', color: 'bg-emerald-500' };
+            }, [lastBackup]);
+
+            const handleCheckIn = (pkg) => {
+                if (processing) return;
+                setProcessing(true);
+                setTimeout(() => setProcessing(false), 800); 
+                onPackageCheckIn(pkg);
+            };
+
+            return (
+                <div className="space-y-4 pb-24 slide-up">
+                    <div className="flex justify-between items-end mb-2">
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{CLINIC_DETAILS.name}</p>
+                            <h1 className="text-2xl font-bold text-slate-800">{CLINIC_DETAILS.doctor}</h1>
+                        </div>
+                        <div onClick={() => setView('data_tools')} className="flex flex-col items-end cursor-pointer group">
+                            <div className="bg-white p-2 rounded-full shadow-sm border border-slate-100 mb-1 active:scale-95 transition-transform hover:bg-slate-50 relative">
+                                <i data-lucide="shield-check" className="w-6 h-6 text-slate-400 group-hover:text-primary-600 transition-colors"></i>
+                                {backupStatus.status !== 'ok' && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>}
+                            </div>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full text-white ${backupStatus.color}`}>{backupStatus.text}</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white shadow-lg shadow-slate-900/20 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-3 opacity-10"><i data-lucide="wallet" size={48}></i></div>
+                        <p className="text-slate-300 text-xs font-medium mb-1">Today's Income</p>
+                        <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(stats.todayIncome)}</h2>
+                        <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><span className="bg-slate-700 px-1.5 py-0.5 rounded text-white">{stats.todayCount}</span> Visits today</p>
+                    </div>
+
+                    {activePackages.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center px-1">
+                                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><i data-lucide="package" className="w-4 h-4 text-purple-600"></i> Active Packages</h3>
+                                <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">{activePackages.length} Active</span>
+                            </div>
+                            <div className="grid gap-2">
+                                {activePackages.map(pkg => {
+                                    const isLow = pkg.remaining <= 3;
+                                    return (
+                                        <div key={pkg.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center relative overflow-hidden">
+                                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isLow ? 'bg-orange-500' : 'bg-purple-500'}`}></div>
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-slate-800 text-sm">{pkg.name}</h4>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-[10px] font-bold ${isLow ? 'text-orange-600' : 'text-slate-500'}`}>{pkg.remaining} Days Left</span>
+                                                    <div className="h-1.5 w-16 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div className={`h-full rounded-full transition-all duration-500 ${isLow ? 'bg-orange-500' : 'bg-purple-500'}`} style={{width: `${(pkg.used / pkg.totalSessions) * 100}%`}}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => onRenewPackage(pkg)} className="bg-orange-50 text-orange-700 hover:bg-orange-100 px-3 py-2 rounded-lg text-xs font-bold transition-colors border border-orange-100">
+                                                    Renew
+                                                </button>
+                                                <button disabled={processing} onClick={() => handleCheckIn(pkg)} className="bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-purple-100 disabled:opacity-50">
+                                                    <i data-lucide="check-square" className="w-4 h-4"></i> {processing ? '...' : 'Check-In'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                         <div><h3 className="font-bold text-slate-800 text-sm">Patient Records</h3><p className="text-xs text-slate-400">Search & Edit details</p></div>
+                         <Button variant="secondary" className="py-2 px-4 text-xs" onClick={() => setView('visits')} icon={() => <i data-lucide="search" size={14}/>}>Find Patient</Button>
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 shadow-sm flex items-center justify-between">
+                         <div><h3 className="font-bold text-blue-900 text-sm">Financial Reports</h3><p className="text-xs text-blue-600">Charts, Reports & Analytics</p></div>
+                         <Button variant="primary" className="py-2 px-4 text-xs bg-blue-600" onClick={() => setView('finances')} icon={() => <i data-lucide="bar-chart-2" size={14}/>}>View Reports</Button>
+                    </div>
+
+                    <div className="flex gap-3 mt-4">
+                        <Button variant="primary" className="flex-1 py-4 text-base" onClick={onNewVisit} icon={() => <i data-lucide="plus-circle" className="w-5 h-5"/>}>New Patient</Button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- FINANCE VIEW ---
+        const FinanceView = ({ visits, expenses, onAddExpense, onEditExpense, onDeleteExpense, setView }) => {
+            const [tab, setTab] = useState('reports');
+            const [reportType, setReportType] = useState('Daily'); 
+            const [showExpenseForm, setShowExpenseForm] = useState(false);
+            const [expenseForm, setExpenseForm] = useState({ date: getToday(), description: '', amount: '', id: null });
+
+            const reportData = useMemo(() => {
+                const groups = {};
+                
+                const getLabel = (key) => {
+                    if (!key) return "Unknown";
+                    if (reportType === 'Daily') {
+                        const [y, m, d] = key.split('-').map(Number);
+                        const date = new Date(y, m - 1, d); 
+                        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit', weekday: 'short' });
+                    }
+                    if (reportType === 'Monthly') { 
+                        const [y, m] = key.split('-').map(Number); 
+                        if (!y || !m) return key;
+                        return new Date(y, m-1).toLocaleString('default', { month: 'short', year: '2-digit' }); 
+                    }
+                    return key;
+                };
+                
+                const initGroup = (k) => ({ label: getLabel(k), income: 0, expense: 0, visitCount: 0, walkIn: 0, drReddy: 0, otherRef: 0, key: k });
+
+                visits.forEach(v => {
+                    if (!v || !v.date) return;
+                    const k = getReportKey(v.date, reportType);
+                    if (!groups[k]) groups[k] = initGroup(k);
+                    groups[k].income += parseFloat(v.fee) || 0;
+                    groups[k].visitCount += 1;
+                    const ref = v.referralType || 'Walk-in';
+                    if (ref === 'Dr. Venkat Reddy') groups[k].drReddy += 1; else if (ref === 'Walk-in') groups[k].walkIn += 1; else groups[k].otherRef += 1;
+                });
+                expenses.forEach(e => {
+                    if (!e || !e.date) return;
+                    const k = getReportKey(e.date, reportType);
+                    if (!groups[k]) groups[k] = initGroup(k);
+                    groups[k].expense += parseFloat(e.amount) || 0;
+                });
+                return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
+            }, [visits, expenses, reportType]);
+
+            const saveExpense = () => {
+                if(expenseForm.description && expenseForm.amount) {
+                    if (expenseForm.id) onEditExpense(expenseForm); else onAddExpense(expenseForm);
+                    setExpenseForm({ date: getToday(), description: '', amount: '', id: null }); setShowExpenseForm(false);
+                }
+            };
+
+            const handleCopy = () => {
+                let text = `FINANCIAL REPORT (${reportType.toUpperCase()})\n`;
+                text += `CLINIC: ${CLINIC_DETAILS.name}\n\n`;
+                text += `Period\tPatients\tIncome\tExpense\tNet Profit\n`;
+                text += `------------------------------------------------------\n`;
+                reportData.forEach(row => {
+                    const net = row.income - row.expense;
+                    text += `${row.label}\t${row.visitCount}\t${row.income}\t${row.expense}\t${net}\n`;
+                });
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try { document.execCommand('copy'); alert("Report copied to clipboard!"); } catch (err) { alert("Failed to copy"); }
+                document.body.removeChild(textArea);
+            };
+
+            const handleWhatsApp = () => {
+                let text = `*FINANCIAL REPORT (${reportType.toUpperCase()})*\n`;
+                text += `*${CLINIC_DETAILS.name}*\n\n`;
+                
+                reportData.forEach(row => {
+                    const net = row.income - row.expense;
+                    text += `*${row.label}*\n`;
+                    text += `Patients: ${row.visitCount} (VR:${row.drReddy}|W:${row.walkIn}|O:${row.otherRef})\n`;
+                    text += `Inc: ${formatCurrency(row.income)} | Exp: ${formatCurrency(row.expense)}\n`;
+                    text += `*Net: ${formatCurrency(net)}*\n\n`;
+                });
+
+                const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            };
+
+            const handleRowClick = (row) => {
+                if (reportType === 'Daily') {
+                    setView('visits', { filterDate: row.key });
+                } else if (reportType === 'Monthly') {
+                    setView('visits', { filterMonth: row.key });
+                } else if (reportType === 'Weekly') {
+                     setView('visits', { filterWeek: row.key });
+                }
+            };
+
+            const Chart = ({ data }) => {
+                const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expense)), 1);
+                const chartData = data.slice(0, 10).reverse();
+                return (
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 no-print">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Trend Analysis (Last 10)</h4>
+                        <div className="flex justify-between items-end h-32 gap-2">
+                            {chartData.map((d, i) => (
+                                <div key={i} className="flex flex-col items-center flex-1 gap-1">
+                                    <div className="w-full flex gap-1 justify-center h-full items-end">
+                                        <div className="w-2 bg-emerald-400 rounded-t-sm transition-all" style={{ height: `${(d.income / maxVal) * 80}%` }} title={`Inc: ${d.income}`}></div>
+                                        <div className="w-2 bg-red-400 rounded-t-sm transition-all" style={{ height: `${(d.expense / maxVal) * 80}%` }} title={`Exp: ${d.expense}`}></div>
+                                    </div>
+                                    <span className="text-[9px] text-slate-400 rotate-0 truncate w-full text-center">{d.label.split(' ')[0]}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="h-full flex flex-col slide-up pb-24 bg-white print:h-auto print:pb-0">
+                     <div className="sticky top-0 bg-background pt-2 pb-2 z-10 px-1 no-print">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-slate-800">Financial Suite</h2>
+                            <div className="bg-white p-1 rounded-lg border border-slate-200 flex text-xs font-bold">
+                                <button onClick={() => setTab('reports')} className={`px-3 py-1.5 rounded-md transition-all ${tab === 'reports' ? 'bg-slate-800 text-white shadow' : 'text-slate-500'}`}>Reports</button>
+                                <button onClick={() => setTab('expenses')} className={`px-3 py-1.5 rounded-md transition-all ${tab === 'expenses' ? 'bg-slate-800 text-white shadow' : 'text-slate-500'}`}>Expenses</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {tab === 'expenses' && (
+                        <div className="space-y-4">
+                            {!showExpenseForm ? (
+                                <Button onClick={() => { setExpenseForm({ date: getToday(), description: '', amount: '', id: null }); setShowExpenseForm(true); }} className="w-full py-3 border-dashed border-2 border-slate-300 bg-slate-50 text-slate-500 hover:border-slate-400 hover:text-slate-700 shadow-none" icon={() => <i data-lucide="plus" size={16}/>}>Log New Expense</Button>
+                            ) : (
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm fade-in">
+                                    <h3 className="font-bold text-sm mb-3">{expenseForm.id ? 'Edit Expense' : 'Add Expense'}</h3>
+                                    <div className="space-y-3">
+                                        <input type="date" value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full p-2 bg-slate-50 rounded-lg text-sm border border-slate-200" />
+                                        <input type="text" placeholder="Description" value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full p-2 bg-slate-50 rounded-lg text-sm border border-slate-200" />
+                                        <input type="number" onWheel={e => e.target.blur()} placeholder="Amount" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full p-2 bg-slate-50 rounded-lg text-sm border border-slate-200" />
+                                        <div className="flex gap-2">
+                                            <Button variant="secondary" className="flex-1 py-2 text-xs" onClick={() => setShowExpenseForm(false)}>Cancel</Button>
+                                            <Button variant="primary" className="flex-1 py-2 text-xs" onClick={saveExpense}>{expenseForm.id ? 'Update' : 'Save'}</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                {expenses.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => (
+                                    <div key={e.id} className="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center group">
+                                        <div><p className="font-bold text-slate-700 text-sm">{e.description}</p><p className="text-[10px] text-slate-400">{e.date}</p></div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-red-500 text-sm">-{formatCurrency(e.amount)}</p>
+                                            <div className="flex gap-2 justify-end mt-1">
+                                                <button onClick={() => { setExpenseForm(e); setShowExpenseForm(true); }} className="text-[10px] text-slate-300 hover:text-blue-500 underline">Edit</button>
+                                                <button onClick={() => onDeleteExpense(e.id)} className="text-[10px] text-slate-300 hover:text-red-500 underline">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'reports' && (
+                        <div className="space-y-4">
+                            <div className="overflow-x-auto pb-2 -mx-1 px-1 no-print">
+                                <div className="flex gap-2 w-max">
+                                    {['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'].map(t => (
+                                        <button key={t} onClick={() => setReportType(t)} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${reportType === t ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}>{t}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            {reportData.length > 0 && <Chart data={reportData} />}
+                            <div className="flex gap-2 no-print">
+                                <Button variant="secondary" className="flex-1 text-xs py-2" onClick={handleCopy} icon={() => <i data-lucide="copy" size={14}/>}>Copy</Button>
+                                <Button variant="secondary" className="flex-1 text-xs py-2" onClick={() => window.print()} icon={() => <i data-lucide="printer" size={14}/>}>Print</Button>
+                                <Button variant="success" className="flex-1 text-xs py-2" onClick={handleWhatsApp} icon={() => <i data-lucide="message-circle" size={14}/>}>WhatsApp</Button>
+                            </div>
+                            <div className="hidden print-only mb-4 border-b pb-4">
+                                <h1 className="text-xl font-bold uppercase">{CLINIC_DETAILS.name}</h1>
+                                <p className="text-xs text-slate-500 mt-1">Financial Report: {reportType}</p>
+                            </div>
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm report-table">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase"><tr><th className="p-3 text-left">Period</th><th className="p-3 text-center">Referrals (Count)</th><th className="p-3 text-right">Financials</th></tr></thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {reportData.map(row => (
+                                            <tr key={row.key} className="hover:bg-blue-50 cursor-pointer" onClick={() => handleRowClick(row)}>
+                                                <td className="p-3 align-top"><div className="font-bold text-slate-700 text-xs whitespace-nowrap">{row.label}</div></td>
+                                                <td className="p-3 text-center align-top">
+                                                    <div className="font-bold text-slate-800 text-sm mb-1">{row.visitCount} <span className="text-[10px] text-slate-400 font-normal">Patients</span></div>
+                                                    <div className="grid grid-cols-3 gap-1 text-[9px] text-slate-500 border-t border-slate-50 pt-1">
+                                                        <div className="text-blue-600 font-bold">VR: {row.drReddy}</div>
+                                                        <div className="text-emerald-600 font-bold">W: {row.walkIn}</div>
+                                                        <div className="text-slate-400">O: {row.otherRef}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 text-right align-top"><div className="text-emerald-600 font-medium text-xs mb-0.5">+{formatCurrency(row.income)}</div><div className="text-red-500 font-medium text-xs mb-1">-{formatCurrency(row.expense)}</div><div className="border-t border-slate-100 pt-1 font-bold text-slate-800 text-sm">{formatCurrency(row.income - row.expense)}</div></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const DataToolsView = ({ onBack, onImportData, visits, expenses, onBackupDone, onFactoryReset, setPin }) => {
+            const fileRef = useRef();
+            const [newPin, setNewPin] = useState('');
+            const handleExport = () => {
+                const dataStr = JSON.stringify({ visits, expenses, lastBackup: new Date().toISOString() }, null, 2);
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([dataStr], { type: "application/json" }));
+                link.download = `DM_Neuro_Backup_${getToday()}.json`;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                onBackupDone();
+            };
+            const handleCSV = () => {
+                // FIXED: Quote escaping for robust CSV
+                const safeCSV = (str) => `"${(str || '').toString().replace(/"/g, '""')}"`;
+                
+                let csv = "Date,Time,Name,Phone,Treatment,Fee,Mode,Referral\n" + visits.map(v => {
+                    return `${v.date},${v.time || ''},${safeCSV(v.name)},${safeCSV(v.phone)},${safeCSV(v.treatment)},${v.fee},${v.paymentMode},${safeCSV(v.referralType)}`;
+                }).join("\n");
+                
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+                link.download = `DM_Neuro_Visits_${getToday()}.csv`;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+            const handleImport = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        let v = Array.isArray(data) ? data : (data.visits || []);
+                        let x = data.expenses || [];
+                        if(confirm(`Restore ${v.length} visits and ${x.length} expenses?`)) onImportData(v, x);
+                    } catch { alert("Error reading file"); }
+                };
+                reader.readAsText(file);
+            };
+            const changePin = () => {
+                if(newPin.length === 4) { setPin(newPin); alert('PIN Updated!'); setNewPin(''); }
+                else alert('PIN must be 4 digits');
+            }
+
+            return (
+                <div className="bg-white min-h-screen pb-24 slide-up">
+                    <div className="sticky top-0 bg-white/80 backdrop-blur-md z-20 px-4 py-4 border-b border-slate-100 flex items-center gap-2 mb-4">
+                        <button onClick={onBack} className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-full"><i data-lucide="arrow-left" size={20}></i></button>
+                        <h2 className="font-bold text-lg">Settings & Data</h2>
+                    </div>
+                    <div className="px-5 space-y-6">
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <h3 className="text-blue-900 font-bold text-sm mb-1">Safety First</h3>
+                            <p className="text-xs text-blue-700 mb-3">Download a backup file every week.</p>
+                            <Button onClick={handleExport} icon={() => <i data-lucide="download"/>} className="w-full text-xs">Download Backup (JSON)</Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button onClick={handleCSV} variant="secondary" icon={() => <i data-lucide="sheet"/>} className="w-full text-xs">Export Excel</Button>
+                            <Button variant="secondary" onClick={() => fileRef.current.click()} icon={() => <i data-lucide="upload"/>} className="w-full text-xs">Restore Data</Button>
+                            <input type="file" ref={fileRef} className="hidden" accept=".json" onChange={handleImport} />
+                        </div>
+                        <div className="border-t border-slate-100 pt-4">
+                            <h3 className="font-bold text-sm text-slate-800 mb-2">Security</h3>
+                            <div className="flex gap-2">
+                                <input type="number" placeholder="New 4-digit PIN" value={newPin} onChange={e => setNewPin(e.target.value)} className="flex-1 p-3 bg-slate-50 rounded-xl text-sm outline-none border border-slate-200" maxLength={4}/>
+                                <Button onClick={changePin} variant="secondary">Set PIN</Button>
+                            </div>
+                        </div>
+                        <div className="border-t border-slate-100 pt-4 pb-8">
+                            <h3 className="font-bold text-sm text-red-600 mb-2">Danger Zone</h3>
+                            <Button variant="danger" onClick={onFactoryReset} icon={() => <i data-lucide="trash-2"/>} className="w-full text-xs">Factory Reset (Clear All)</Button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const VisitsList = ({ visits, onEdit, onDelete, onPrint, viewParams }) => {
+            const [query, setQuery] = useState("");
+            const [filterMode, setFilterMode] = useState(false);
+            const [filters, setFilters] = useState({ date: '', month: '', startDate: '', endDate: '' });
+
+            // Initialize filters from viewParams (navigation from reports)
+            useEffect(() => {
+                if (viewParams) {
+                    if (viewParams.filterDate) {
+                        setFilters({ date: viewParams.filterDate, month: '', startDate: '', endDate: '' });
+                        setFilterMode(true);
+                    } else if (viewParams.filterMonth) {
+                        setFilters({ date: '', month: viewParams.filterMonth, startDate: '', endDate: '' });
+                        setFilterMode(true);
+                    } else if (viewParams.filterWeek) {
+                         // Weekly filter: simplified logic for now - filter by checking if getReportKey matches
+                         // Since exact date math is complex in useMemo without helper, we'll store the week key
+                         // and filter in useMemo
+                         setFilters({ date: '', month: '', startDate: '', endDate: '', week: viewParams.filterWeek });
+                         setFilterMode(true);
+                    }
+                } else {
+                    // NEW: Reset filters if navigated without params (e.g. hitting 'Patients' tab)
+                    setFilters({ date: '', month: '', startDate: '', endDate: '', week: '' });
+                    setFilterMode(false);
+                }
+            }, [viewParams]);
+
+            const filtered = useMemo(() => {
+                let data = visits;
+                
+                // 1. Text Search
+                if (query) {
+                    const lower = query.toLowerCase();
+                    data = data.filter(v => (v.name||"").toLowerCase().includes(lower) || (v.phone||"").includes(lower));
+                }
+
+                // 2. Date/Month/Week Filters
+                if (filters.date) {
+                    data = data.filter(v => v.date === filters.date);
+                } else if (filters.month) {
+                    data = data.filter(v => v.date.startsWith(filters.month));
+                } else if (filters.startDate && filters.endDate) {
+                    data = data.filter(v => v.date >= filters.startDate && v.date <= filters.endDate);
+                } else if (filters.week) {
+                     // Filter by week key
+                     data = data.filter(v => getReportKey(v.date, 'Weekly') === filters.week);
+                }
+
+                // 3. Sort (Newest First)
+                // FIX: Switched to String-based sorting for reliability and speed
+                return [...data].sort((a, b) => {
+                    // Primary sort: Date (Descending)
+                    const dateComp = b.date.localeCompare(a.date);
+                    if (dateComp !== 0) return dateComp;
+                    // Secondary sort: Creation ID (Descending) to ensure stable order for same-day entries
+                    return String(b.id).localeCompare(String(a.id));
+                });
+            }, [visits, query, filters]);
+
+            const getAmountDisplay = (v) => {
+                if (v.paymentMode === 'FOC' || (v.fee == 0 && v.paymentMode !== 'Package Visit')) return 'FOC';
+                return formatCurrency(v.fee);
+            };
+
+            const clearFilters = () => {
+                setFilters({ date: '', month: '', startDate: '', endDate: '', week: '' });
+                setFilterMode(false);
+            };
+
+            return (
+                <div className="h-full flex flex-col slide-up pb-24">
+                    <div className="sticky top-0 bg-background pt-2 pb-4 z-10 px-1 space-y-2">
+                        <div className="relative shadow-sm flex items-center gap-2">
+                             <div className="relative flex-1">
+                                <i data-lucide="search" className="absolute left-4 top-3.5 text-slate-400 w-4 h-4"></i>
+                                <input type="text" placeholder="Search Patients..." value={query} onChange={e => setQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none font-medium" />
+                             </div>
+                             <button onClick={() => setFilterMode(!filterMode)} className={`p-3 rounded-xl border transition-colors ${filterMode || filters.date || filters.month ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}>
+                                <i data-lucide="filter" className="w-4 h-4"></i>
+                             </button>
+                        </div>
+                        
+                        {filterMode && (
+                            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm animate-fade-in grid grid-cols-2 gap-2">
+                                <div className="col-span-2 flex justify-between items-center mb-1">
+                                    <span className="text-xs font-bold text-slate-500 uppercase">Filter List</span>
+                                    {(filters.date || filters.month || filters.startDate || filters.week) && <button onClick={clearFilters} className="text-[10px] text-red-500 font-bold">Clear All</button>}
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-slate-400 font-bold">Specific Date</label>
+                                    <input type="date" value={filters.date} onChange={e => setFilters({...filters, date: e.target.value, month: '', week: ''})} className="w-full p-2 bg-slate-50 rounded-lg text-xs border border-slate-200 outline-none" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-slate-400 font-bold">Specific Month</label>
+                                    <input type="month" value={filters.month} onChange={e => setFilters({...filters, month: e.target.value, date: '', week: ''})} className="w-full p-2 bg-slate-50 rounded-lg text-xs border border-slate-200 outline-none" />
+                                </div>
+                                <div className="col-span-2 space-y-1">
+                                    <label className="text-[10px] text-slate-400 font-bold">Date Range</label>
+                                    <div className="flex gap-2">
+                                        <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value, date: '', month: '', week: ''})} className="flex-1 p-2 bg-slate-50 rounded-lg text-xs border border-slate-200 outline-none" placeholder="Start" />
+                                        <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value, date: '', month: '', week: ''})} className="flex-1 p-2 bg-slate-50 rounded-lg text-xs border border-slate-200 outline-none" placeholder="End" />
+                                    </div>
+                                </div>
+                                {filters.week && <div className="col-span-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-lg text-center">Filtering by Week: {filters.week}</div>}
+                            </div>
+                        )}
+                        
+                        {(filters.date || filters.month || filters.startDate || filters.week) && !filterMode && (
+                             <div className="flex items-center gap-2 px-1">
+                                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">
+                                    Filtered: {filters.date || filters.month || (filters.startDate ? 'Range' : filters.week)}
+                                </span>
+                                <button onClick={clearFilters} className="text-slate-400 hover:text-red-500"><i data-lucide="x-circle" className="w-4 h-4"></i></button>
+                             </div>
+                        )}
+                    </div>
+                    
+                    <div className="space-y-3 flex-1 overflow-auto">
+                        {filtered.length === 0 ? (
+                            <div className="text-center py-12 text-slate-400">
+                                <i data-lucide="calendar-x" className="w-12 h-12 mx-auto mb-2 opacity-20"></i>
+                                <p className="text-sm">No visits found for this period.</p>
+                            </div>
+                        ) : (
+                            filtered.map(v => (
+                                <div key={v.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-slate-800">{v.name}</h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-xs text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{v.treatment}</span>
+                                                {v.isPackagePurchase && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">PKG ({v.totalSessions})</span>}
+                                                {v.paymentMode === 'Package Visit' && <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">Pkg Visit</span>}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`font-bold ${getAmountDisplay(v) === 'FOC' ? 'text-gray-500' : 'text-slate-800'}`}>{getAmountDisplay(v)}</p>
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-slate-400">{formatDate(v.date)}</p>
+                                                {v.time && <p className="text-[9px] text-slate-300">{formatTimeDisplay(v.time)}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2 border-t border-slate-50">
+                                        <Badge type={v.paymentMode} fee={v.fee}>{v.paymentMode}</Badge>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => onEdit(v)} className="p-2 text-slate-400 hover:text-blue-600"><i data-lucide="pencil" size={16}></i></button>
+                                            <button onClick={() => onPrint(v)} className="p-2 text-slate-400 hover:text-slate-800"><i data-lucide="printer" size={16}></i></button>
+                                            <button onClick={() => onDelete(v.id)} className="p-2 text-slate-400 hover:text-red-600"><i data-lucide="trash-2" size={16}></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const EntryForm = ({ initialData, onSave, onCancel, visits }) => {
+            // CRASH FIX: Added safeguards for missing or undefined initialData properties
+            // INITIALIZATION: Correctly handle composite payment modes like "Package Advance (UPI)"
+            const getInitialMode = () => {
+                if (!initialData) return 'Cash';
+                // Safe check: handle null/undefined paymentMode
+                const mode = initialData.paymentMode || ''; 
+                if (mode.startsWith('Package Advance')) return 'Package Advance';
+                return mode || 'Cash';
+            };
+            
+            const getInitialAdvanceMethod = () => {
+                if (!initialData || !initialData.paymentMode) return 'Cash';
+                const mode = initialData.paymentMode || '';
+                if (!mode.startsWith('Package Advance')) return 'Cash';
+                const match = mode.match(/\((.*)\)/);
+                return match ? match[1] : 'Cash';
+            };
+
+            const [form, setForm] = useState(initialData ? { 
+                ...initialData, 
+                // Fallbacks for critical fields
+                name: initialData.name || '',
+                phone: initialData.phone || '',
+                address: initialData.address || '',
+                referralType: initialData.referralType || 'Dr. Venkat Reddy',
+                time: initialData.time || getCurrentTime(), 
+                paymentMode: getInitialMode() 
+            } : { 
+                date: getToday(), 
+                time: getCurrentTime(), 
+                name: '', 
+                phone: '', 
+                address: '', 
+                treatment: 'LBA', 
+                fee: '', 
+                paymentMode: 'Cash', 
+                referralType: 'Dr. Venkat Reddy', 
+                notes: '', 
+                totalSessions: '', 
+                id: null 
+            });
+            const [advanceMethod, setAdvanceMethod] = useState(getInitialAdvanceMethod());
+            const [foundPatient, setFoundPatient] = useState(null);
+
+            useEffect(() => {
+                if (form.phone && form.phone.length >= 10 && !initialData) {
+                     const match = visits.find(v => v.phone === form.phone);
+                     if (match) setFoundPatient(match);
+                }
+            }, [form.phone]);
+
+            const autoFill = () => { 
+                if(foundPatient) {
+                    setForm(p => ({...p, name: foundPatient.name, address: foundPatient.address, referralType: foundPatient.referralType || 'Walk-in'})); 
+                    setFoundPatient(null); 
+                }
+            };
+
+            const handleSubmit = () => {
+                if(form.name && form.fee !== '') {
+                    const isPackage = form.paymentMode === 'Package Advance';
+                    const isPackageVisit = form.paymentMode === 'Package Visit';
+                    
+                    // Construct detailed payment mode string
+                    let finalPaymentMode = form.paymentMode;
+                    if (isPackage) {
+                        finalPaymentMode = `Package Advance (${advanceMethod})`;
+                    }
+
+                    const finalData = { 
+                        ...form, 
+                        paymentMode: finalPaymentMode,
+                        isPackagePurchase: isPackage, 
+                        totalSessions: isPackage ? form.totalSessions : '',
+                        packageId: isPackageVisit ? form.packageId : null
+                    };
+                    onSave(finalData);
+                }
+            };
+
+            const handleModeChange = (e) => {
+                const val = e.target.value;
+                setForm(prev => ({
+                    ...prev, 
+                    paymentMode: val, 
+                    fee: val === 'FOC' ? 0 : prev.fee
+                }));
+            };
+
+            return (
+                <div className="bg-white min-h-full pb-20 fade-in">
+                    <div className="sticky top-0 bg-white/80 backdrop-blur-md z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center mb-4">
+                        <button onClick={onCancel} className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-full"><i data-lucide="arrow-left" size={20}></i></button>
+                        <h2 className="font-bold text-lg">{initialData ? 'Edit Record' : 'New Patient'}</h2>
+                        <div className="w-8"></div>
+                    </div>
+                    <div className="px-5 space-y-4">
+                        <div className="flex gap-2">
+                            <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="flex-[2] p-3 bg-slate-50 rounded-xl font-medium outline-none" />
+                            <input type="time" value={form.time} onChange={e => setForm({...form, time: e.target.value})} className="flex-1 p-3 bg-slate-50 rounded-xl font-medium outline-none" />
+                        </div>
+                        <div className="relative">
+                            <input type="tel" placeholder="Phone (Auto-Lookup)" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl outline-none" />
+                            {foundPatient && <div className="absolute top-full left-0 w-full bg-blue-600 text-white p-2 rounded-lg z-10 mt-1 flex justify-between items-center text-xs"><span className="font-bold">Found: {foundPatient.name}</span><button type="button" onClick={autoFill} className="bg-white text-blue-600 px-2 py-1 rounded font-bold">Use</button></div>}
+                        </div>
+                        <input type="text" placeholder="Patient Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl font-semibold outline-none" />
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                            {['Dr. Venkat Reddy', 'Walk-in', 'Other'].map(t => (
+                                <button key={t} onClick={() => setForm({...form, referralType: t})} className={`py-2 px-2 rounded-lg text-xs font-bold border ${form.referralType === t ? 'bg-slate-800 text-white' : 'bg-white text-slate-500'}`}>{t}</button>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <input type="number" onWheel={e => e.target.blur()} placeholder="Fee (₹)" value={form.fee} onChange={e => setForm({...form, fee: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl font-bold outline-none" />
+                            <select value={form.paymentMode} onChange={handleModeChange} className="w-full p-3 bg-slate-50 rounded-xl outline-none font-medium">
+                                {form.paymentMode === 'Package Visit' && <option>Package Visit</option>}
+                                <option>Cash</option><option>UPI</option><option>Credit</option><option>Package Advance</option><option>FOC</option>
+                            </select>
+                        </div>
+
+                        {form.paymentMode === 'Package Advance' && (
+                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in space-y-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-purple-700 uppercase mb-1">Total Days / Sessions</label>
+                                    <input type="number" onWheel={e => e.target.blur()} placeholder="e.g. 7 or 10" value={form.totalSessions} onChange={e => setForm({...form, totalSessions: e.target.value, isPackagePurchase: true})} className="w-full p-3 bg-white border border-purple-200 rounded-xl font-bold text-purple-800 outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-purple-700 uppercase mb-1">Paid Via</label>
+                                    <div className="flex bg-white rounded-xl border border-purple-200 p-1">
+                                        {['Cash', 'UPI', 'Card'].map(m => (
+                                            <button key={m} onClick={() => setAdvanceMethod(m)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${advanceMethod === m ? 'bg-purple-600 text-white shadow' : 'text-purple-400 hover:bg-purple-50'}`}>{m}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2">
+                            {['LBA', 'Neck Pain', 'Shoulder', 'Stroke', 'Knee', 'Neuro', 'Ortho'].map(t => (
+                                <button key={t} onClick={() => setForm({...form, treatment: t})} className={`px-3 py-1 rounded-full text-xs font-bold border ${form.treatment === t ? 'bg-blue-600 text-white' : 'bg-white text-slate-500'}`}>{t}</button>
+                            ))}
+                        </div>
+                        <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-slate-100 max-w-md mx-auto right-0">
+                            <Button variant="primary" className="w-full py-3.5 shadow-xl" onClick={handleSubmit}>Save Record</Button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Receipt = ({ data, onBack }) => (
+            <div className="min-h-screen bg-white flex flex-col items-center p-8 print-container">
+                <div className="w-full max-w-xl">
+                    <div className="text-center border-b-2 border-slate-800 pb-6 mb-6">
+                        <h1 className="text-3xl font-bold uppercase">{CLINIC_DETAILS.name}</h1>
+                        <p className="text-sm font-semibold mt-1">{CLINIC_DETAILS.subtitle}</p>
+                        <p className="text-xs text-slate-500 mt-1">{CLINIC_DETAILS.doctor}</p>
+                    </div>
+                    <div className="flex justify-between mb-8 text-sm">
+                        <div><p><span className="font-bold">Patient:</span> {data.name}</p><p><span className="font-bold">Phone:</span> {data.phone}</p></div>
+                        <div className="text-right"><p><span className="font-bold">Date:</span> {formatDate(data.date)}</p><p><span className="font-bold">Mode:</span> {data.paymentMode}</p></div>
+                    </div>
+                    <table className="w-full mb-12">
+                        <thead><tr className="border-b-2 border-slate-200"><th className="text-left py-2">Treatment</th><th className="text-right py-2">Fee</th></tr></thead>
+                        <tbody><tr><td className="py-4 font-medium text-lg">{data.treatment} {data.paymentMode.startsWith('Package Advance') && `(${data.totalSessions} Days Package)`}</td><td className="py-4 text-right font-bold text-lg">{data.paymentMode === 'FOC' || (data.fee == 0 && data.paymentMode !== 'Package Visit') ? 'FOC' : formatCurrency(data.fee)}</td></tr></tbody>
+                    </table>
+                    <div className="text-center mt-12"><p className="text-[10px] font-bold uppercase text-slate-400">Authorized Signature</p></div>
+                </div>
+                <div className="fixed bottom-8 gap-4 flex no-print">
+                    <Button variant="secondary" onClick={onBack}>Back</Button>
+                    <Button variant="dark" onClick={() => window.print()}>Print</Button>
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            const [locked, setLocked] = useState(true);
+            const [view, setView] = useState('dashboard');
+            const [viewParams, setViewParams] = useState(null); 
+            
+            // SANITIZER ON LOAD: Remove nulls and ensure arrays
+            const [visits, setVisits] = useState(() => { 
+                try { 
+                    const data = JSON.parse(localStorage.getItem('dm_visits'));
+                    return Array.isArray(data) ? data.filter(v => v !== null && typeof v === 'object') : []; 
+                } catch { return []; } 
+            });
+            const [expenses, setExpenses] = useState(() => { 
+                try { 
+                    const data = JSON.parse(localStorage.getItem('dm_expenses'));
+                    return Array.isArray(data) ? data.filter(e => e !== null && typeof e === 'object') : []; 
+                } catch { return []; } 
+            });
+            const [lastBackup, setLastBackup] = useState(() => { try { return localStorage.getItem('dm_last_backup'); } catch { return null; } });
+            const [pin, setPin] = useState(() => { try { return localStorage.getItem('dm_pin') || '7177'; } catch { return '7177'; } });
+            const [editItem, setEditItem] = useState(null);
+            const [printItem, setPrintItem] = useState(null);
+
+            useEffect(() => { 
+                localStorage.setItem('dm_visits', JSON.stringify(visits)); 
+                localStorage.setItem('dm_expenses', JSON.stringify(expenses));
+                localStorage.setItem('dm_pin', pin);
+                if(lastBackup) localStorage.setItem('dm_last_backup', lastBackup);
+                if(window.lucide) window.lucide.createIcons(); 
+            }, [visits, expenses, view, lastBackup, pin]);
+
+            // Enhanced Navigation
+            const navigate = (viewName, params = null) => {
+                setView(viewName);
+                setViewParams(params);
+            };
+
+            const handleSave = (visit) => {
+                // Auto-Capitalize Name
+                const formattedName = visit.name ? visit.name.charAt(0).toUpperCase() + visit.name.slice(1) : '';
+                const finalVisit = { ...visit, name: formattedName };
+
+                if (visit.id) setVisits(p => p.map(v => v.id === visit.id ? finalVisit : v));
+                else setVisits(p => [{...finalVisit, id: generateId()}, ...p]);
+                navigate('dashboard'); setEditItem(null);
+            };
+            const handleDelete = (id) => { if(confirm('Delete?')) setVisits(p => p.filter(v => v.id !== id)); };
+            const handleAddExpense = (e) => setExpenses(p => [{...e, id: generateId()}, ...p]);
+            const handleEditExpense = (exp) => setExpenses(p => p.map(e => e.id === exp.id ? exp : e));
+            const handleDeleteExpense = (id) => { if(confirm('Delete expense?')) setExpenses(p => p.filter(e => e.id !== id)); };
+            const handleImportData = (v, x) => { setVisits(v); setExpenses(x); alert("Restored!"); };
+            const handleBackupDone = () => setLastBackup(new Date().toISOString());
+            const handleFactoryReset = () => { if(prompt("Type 'DELETE' to confirm full reset:") === 'DELETE') { setVisits([]); setExpenses([]); alert('Data Cleared'); } };
+
+            // CRASH FIX: Renew Logic Sanitization
+            const handleRenewPackage = (pkg) => {
+                setEditItem({
+                    name: pkg.name || '',
+                    phone: pkg.phone || '',
+                    address: pkg.address || '',
+                    paymentMode: 'Package Advance',
+                    referralType: pkg.referralType || 'Dr. Venkat Reddy',
+                    treatment: pkg.treatment || 'LBA',
+                    fee: '',
+                    totalSessions: '',
+                    id: null,
+                    date: getToday(),
+                    time: getCurrentTime()
+                });
+                navigate('entry');
+            };
+
+            const handlePackageCheckIn = (pkg) => {
+                const used = pkg.used || 0;
+                if(used >= parseInt(pkg.totalSessions || 0)) { 
+                    if(confirm("Package completed. Renew?")) handleRenewPackage(pkg);
+                    return; 
+                }
+                
+                if(confirm(`Mark attendance for ${pkg.name}? (Session ${used + 1}/${pkg.totalSessions})`)) {
+                    const visit = {
+                        id: generateId(), date: getToday(), time: getCurrentTime(), name: pkg.name, phone: pkg.phone, address: pkg.address,
+                        treatment: pkg.treatment, fee: 0, paymentMode: 'Package Visit',
+                        packageId: pkg.id, referralType: pkg.referralType
+                    };
+                    setVisits(prev => [visit, ...prev]);
+                    
+                    if (used + 1 === parseInt(pkg.totalSessions || 0)) {
+                        setTimeout(() => {
+                            if(confirm(`Package Completed for ${pkg.name}! Renew now?`)) {
+                                handleRenewPackage(pkg);
+                            }
+                        }, 500);
+                    } else {
+                        alert("Attendance Marked!");
+                    }
+                }
+            };
+
+            if (locked) return <LockScreen onUnlock={() => setLocked(false)} currentPin={pin} />;
+
+            if (view === 'receipt') return <Receipt data={printItem} onBack={() => navigate('visits')} />;
+            if (view === 'entry') return <EntryForm initialData={editItem} onSave={handleSave} onCancel={() => { setEditItem(null); navigate('dashboard'); }} visits={visits} />;
+            if (view === 'data_tools') return <DataToolsView onBack={() => navigate('dashboard')} onImportData={handleImportData} visits={visits} expenses={expenses} onBackupDone={handleBackupDone} onFactoryReset={handleFactoryReset} setPin={setPin} />;
+            
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl overflow-hidden">
+                    <div className="h-full overflow-y-auto p-5 pb-24 scroll-smooth">
+                        {view === 'dashboard' && <Dashboard visits={visits} setView={navigate} onNewVisit={() => { setEditItem(null); navigate('entry'); }} onPackageCheckIn={handlePackageCheckIn} lastBackup={lastBackup} onRenewPackage={handleRenewPackage} />}
+                        {view === 'visits' && <VisitsList visits={visits} onEdit={(v) => { setEditItem(v); navigate('entry'); }} onDelete={handleDelete} onPrint={(v) => { setPrintItem(v); navigate('receipt'); }} viewParams={viewParams} />}
+                        {view === 'finances' && <FinanceView visits={visits} expenses={expenses} onAddExpense={handleAddExpense} onEditExpense={handleEditExpense} onDeleteExpense={handleDeleteExpense} setView={navigate} />}
+                    </div>
+                    <div className="fixed bottom-0 w-full max-w-md bg-white/90 backdrop-blur-lg border-t border-slate-200 p-2 flex justify-around items-center z-50 pb-safe no-print">
+                        <NavButton active={view === 'dashboard'} onClick={() => navigate('dashboard')} icon="layout-dashboard" label="Home" />
+                        <NavButton active={view === 'visits'} onClick={() => navigate('visits')} icon="users" label="Patients" />
+                        <NavButton active={view === 'finances'} onClick={() => navigate('finances')} icon="pie-chart" label="Finances" />
+                        <NavButton active={view === 'entry'} onClick={() => { setEditItem(null); navigate('entry'); }} icon="plus-circle" label="New" highlight />
+                    </div>
+                </div>
+            );
+        };
+
+        const NavButton = ({ active, onClick, icon, label, highlight }) => (
+            <button onClick={onClick} className={`flex flex-col items-center justify-center w-16 h-14 rounded-2xl transition-all duration-300 ${highlight ? 'bg-slate-800 text-white shadow-lg -translate-y-2' : active ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                <i data-lucide={icon} className={`${highlight ? 'w-6 h-6' : 'w-5 h-5'} ${active && !highlight ? 'fill-current opacity-20 stroke-[2.5px]' : ''}`}></i>
+                {!highlight && <span className="text-[10px] font-bold mt-1">{label}</span>}
+            </button>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
