@@ -90,7 +90,20 @@
     </style>
 </head>
 <body>
+    <!-- Fallback error display if React fails completely -->
+    <div id="global-error" style="display:none; padding:20px; color:white; background:red; text-align:center;">
+        <h2>Critical Error</h2>
+        <p id="global-error-msg"></p>
+    </div>
+
     <div id="root"></div>
+
+    <script>
+        window.onerror = function(msg, url, line) {
+            document.getElementById('global-error').style.display = 'block';
+            document.getElementById('global-error-msg').innerText = msg + " (Line " + line + ")";
+        };
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
@@ -112,8 +125,8 @@
                         <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-6 text-center">
                             <div>
                                 <h2 className="text-2xl font-bold text-red-500 mb-2">Something went wrong.</h2>
-                                <p className="text-sm text-gray-300 bg-gray-800 p-4 rounded-xl font-mono">{this.state.error.toString()}</p>
-                                <button onClick={() => window.location.reload()} className="mt-6 bg-white text-black px-6 py-3 rounded-xl font-bold">Reload App</button>
+                                <p className="text-sm text-gray-300 bg-gray-800 p-4 rounded-xl font-mono mb-4 overflow-auto max-h-48">{this.state.error ? this.state.error.toString() : 'Unknown Error'}</p>
+                                <button onClick={() => window.location.reload()} className="bg-white text-black px-6 py-3 rounded-xl font-bold active:scale-95 transition-transform">Reload App</button>
                             </div>
                         </div>
                     );
@@ -123,6 +136,7 @@
         }
 
         // --- ICONS ---
+        // Robust SVG Definitions - using simple paths where possible to avoid parser issues
         const Icon = ({ path, size = 24, className = "", fill = "none", strokeWidth = 2 }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {path}
@@ -146,7 +160,7 @@
             FileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
             Package: <><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-9 5.19"/><path d="m21 16-9 5.19"/><path d="m21 16-9-5.19"/><path d="M12 22v-9"/><path d="m12 13 9-5.19"/><path d="m12 13-9-5.19"/></>,
             CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
-            Message: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+            Message: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>,
             Share: <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></>,
             Printer: <><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></>,
             Copy: <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
@@ -171,6 +185,7 @@
         };
         const getToday = () => {
             const d = new Date();
+            // Local date correction for consistent daily reporting
             d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
             return d.toISOString().split('T')[0];
         };
@@ -715,7 +730,7 @@
                     {tab === 'Overview' && (<div className="px-4 mt-4 space-y-4"><SegmentedControl options={['Daily', 'Monthly', 'Yearly']} active={period} onChange={setPeriod} /><div className="glass-panel p-5 rounded-3xl"><h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6">Performance Trend</h3><div className="flex items-end justify-between h-32 gap-3">{reportData.slice(0, 7).reverse().map((d, i) => { const max = Math.max(...reportData.map(r => Math.max(r.income, r.expense)), 100); return (<div key={i} className="flex-1 flex flex-col items-center gap-2 group"><div className="w-full flex justify-center items-end gap-1 h-full"><div className="w-3 bg-blue-500 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity" style={{height: `${(d.income/max)*100}%`}}></div><div className="w-3 bg-red-400 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity" style={{height: `${(d.expense/max)*100}%`}}></div></div><div className="text-[10px] font-bold text-gray-400 w-full text-center">{d.label.split('-').pop()}</div></div>) })}{reportData.length === 0 && <div className="text-center w-full text-gray-400 text-xs font-medium">No Data Available</div>}</div></div><div className="glass-panel rounded-3xl overflow-hidden"><div className="p-4 bg-gray-50/50 border-b border-gray-200/50 flex text-xs font-bold text-gray-400 uppercase tracking-wider"><div className="flex-1">Period</div><div className="w-20 text-right">Income</div><div className="w-20 text-right">Net</div></div>{reportData.map((row, i) => (<div key={i} className="p-4 border-b border-gray-200/50 flex items-center text-sm"><div className="flex-1 font-bold text-gray-800">{row.label}</div><div className="w-20 text-right text-gray-600 font-medium">{formatCurrency(row.income)}</div><div className={`w-20 text-right font-bold ${row.income - row.expense >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(row.income - row.expense)}</div></div>))}</div></div>)}
                     {tab === 'Expenses' && (<div className="px-4 mt-4"><div className="glass-panel rounded-3xl overflow-hidden">{expenses.map((e, i) => (<div key={e.id} className="p-4 flex justify-between items-center border-b border-gray-200/50 last:border-0 hover:bg-white/40"><div><div className="font-bold text-gray-900">{e.description}</div><div className="text-xs font-medium text-gray-500">{e.date} • {e.category}</div></div><div className="text-right"><div className="font-bold text-red-500">-{formatCurrency(e.amount)}</div><button onClick={() => onDeleteExpense(e.id)} className="text-[10px] text-gray-400 font-bold hover:text-red-500 transition-colors mt-1">DELETE</button></div></div>))}{expenses.length === 0 && <div className="p-12 text-center text-gray-400 font-medium">No expenses logged.</div>}</div></div>)}
                     
-                    {showExpModal && (<div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter"><div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setShowExpModal(false)}></div><div className="relative w-full md:max-w-md mx-auto my-auto z-10 bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/50"><h3 className="text-xl font-bold mb-6 text-gray-900">Log Expense</h3>
+                    {showExpModal && (<div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter"><div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowExpModal(false)}></div><div className="relative w-full md:max-w-lg mx-auto my-auto z-10 bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/50"><h3 className="text-xl font-bold mb-6 text-gray-900">Log Expense</h3>
                     <IOSSelect label="Category" options={['Rent', 'Salary', 'Equipment', 'Consumables', 'Marketing', 'Utilities', 'Other']} value={newExp.category} onChange={e => setNewExp({...newExp, category: e.target.value})} />
                     <IOSInput label="Description" value={newExp.description} onChange={e => setNewExp({...newExp, description: e.target.value})} placeholder="e.g. November Rent" /><IOSInput label="Amount" type="number" value={newExp.amount} onChange={e => setNewExp({...newExp, amount: e.target.value})} placeholder="0.00" /><IOSInput label="Date" type="date" value={newExp.date} onChange={e => setNewExp({...newExp, date: e.target.value})} /><div className="flex gap-3 mt-8"><button onClick={() => setShowExpModal(false)} className="flex-1 py-3.5 text-gray-600 font-bold bg-gray-200/50 rounded-2xl hover:bg-gray-200 transition-colors">Cancel</button><button onClick={saveExpense} className="flex-1 py-3.5 text-white font-bold bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">Save</button></div></div></div>)}
 
@@ -1209,14 +1224,14 @@
             const [locked, setLocked] = useState(true);
             const [view, setView] = useState('dashboard');
             const [modalData, setModalData] = useState(null);
-            const [syncUrl, setSyncUrl] = useState(() => SafeStorage.getItem('dm_sync_url') || '');
-            const [assessmentUrl, setAssessmentUrl] = useState(() => SafeStorage.getItem('dm_assessment_url') || './index.html');
-            const [isSyncing, setIsSyncing] = useState(false);
             
             const [visits, setVisits] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_visits')) || []; } catch { return []; } });
             const [expenses, setExpenses] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_expenses')) || []; } catch { return []; } });
             const [pin, setPin] = useState(() => SafeStorage.getItem('dm_pin') || '7177');
             const [lastBackup, setLastBackup] = useState(() => SafeStorage.getItem('dm_last_backup'));
+            const [syncUrl, setSyncUrl] = useState(() => SafeStorage.getItem('dm_sync_url') || '');
+            const [assessmentUrl, setAssessmentUrl] = useState(() => SafeStorage.getItem('dm_assessment_url') || './index.html');
+            const [isSyncing, setIsSyncing] = useState(false);
 
             // Auto-lock logic
             const timerRef = useRef(null);
@@ -1341,7 +1356,11 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 </html>
