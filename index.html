@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -765,7 +766,7 @@
             const fileRef = useRef();
             const [newPin, setNewPin] = useState('');
             const [syncUrlInput, setSyncUrlInput] = useState(SafeStorage.getItem('dm_sync_url') || '');
-            const [assessmentUrlInput, setAssessmentUrlInput] = useState(SafeStorage.getItem('dm_assessment_url') || './index.html');
+            const [assessmentUrlInput, setAssessmentUrlInput] = useState(SafeStorage.getItem('dm_assessment_url') || './assessment.html');
 
             const handleFile = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { try { const data = JSON.parse(ev.target.result); if(confirm('Restore data?')) onRestore(data); } catch { alert("Invalid File"); } }; reader.readAsText(file); };
             const savePin = () => { if (newPin.length === 4) { setPin(newPin); alert("PIN Updated"); setNewPin(''); } else alert("PIN must be 4 digits"); };
@@ -816,7 +817,7 @@
                                 <div className="border-t border-gray-200/50 pt-4">
                                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Assessment Tool URL</label>
                                     <div className="flex gap-2">
-                                        <input type="text" placeholder="./index.html" value={assessmentUrlInput} onChange={e => setAssessmentUrlInput(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none text-xs font-mono" />
+                                        <input type="text" placeholder="./assessment.html" value={assessmentUrlInput} onChange={e => setAssessmentUrlInput(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none text-xs font-mono" />
                                         <button onClick={saveAssessmentUrl} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-xs">Save</button>
                                     </div>
                                 </div>
@@ -1230,7 +1231,7 @@
             const [pin, setPin] = useState(() => SafeStorage.getItem('dm_pin') || '7177');
             const [lastBackup, setLastBackup] = useState(() => SafeStorage.getItem('dm_last_backup'));
             const [syncUrl, setSyncUrl] = useState(() => SafeStorage.getItem('dm_sync_url') || '');
-            const [assessmentUrl, setAssessmentUrl] = useState(() => SafeStorage.getItem('dm_assessment_url') || './index.html');
+            const [assessmentUrl, setAssessmentUrl] = useState(() => SafeStorage.getItem('dm_assessment_url') || './assessment.html');
             const [isSyncing, setIsSyncing] = useState(false);
 
             // Auto-lock logic
@@ -1303,10 +1304,11 @@
             const handleAssess = (patient) => {
                 const params = new URLSearchParams({
                     name: patient.name || '',
-                    age: patient.age || '', // Pass age
-                    sex: patient.sex || '', // Pass sex
+                    age: patient.age || '', 
+                    sex: patient.sex || '', 
                     phone: patient.phone || '',
-                    address: patient.address || ''
+                    address: patient.address || '',
+                    id: patient.patientId || patient.id || '' /* Added ID for pairing */
                 });
                 window.open(`${assessmentUrl}?${params.toString()}`, '_blank');
             };
