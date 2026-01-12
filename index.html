@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="NeuroManager">
 
     <!-- APP ICONS -->
-    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=%2B&background=FF3B30&color=fff&rounded=true&bold=true&size=512&font-size=0.6">
-    <link rel="icon" type="image/png" href="https://ui-avatars.com/api/?name=%2B&background=FF3B30&color=fff&rounded=true&bold=true&size=512&font-size=0.6">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/9.x/icons/svg?seed=Medical&backgroundColor=007AFF">
+    <link rel="icon" type="image/svg+xml" href="https://api.dicebear.com/9.x/icons/svg?seed=Medical&backgroundColor=007AFF">
 
     <title>NeuroManager iOS</title>
     
@@ -128,7 +128,12 @@
             Repeat: <><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></>,
             Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
             XCircle: <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>,
-            Stethoscope: <><path d="M11 2v2" /><path d="M5 2v2" /><path d="M5 5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-1" /><path d="M8 9v1a4 4 0 0 0 8 0v-1" /><path d="M12 14v4" /><circle cx="12" cy="20" r="2" /></>
+            Stethoscope: <><path d="M11 2v2" /><path d="M5 2v2" /><path d="M5 5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-1" /><path d="M8 9v1a4 4 0 0 0 8 0v-1" /><path d="M12 14v4" /><circle cx="12" cy="20" r="2" /></>,
+            CalendarCheck: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></>,
+            Activity: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
+            Cloud: <><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></>,
+            Link: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
+            UserDoctor: <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 12v3"/><path d="M10 13.5h4"/></>
         };
 
         // --- UTILS ---
@@ -311,7 +316,7 @@
 
         // --- VIEWS ---
 
-        const Dashboard = ({ visits, setView, onNewVisit, onCheckIn, lastBackup }) => {
+        const Dashboard = ({ visits, setView, onNewVisit, onCheckIn, lastBackup, onSync }) => {
             const today = getToday();
             
             const backupAlert = useMemo(() => {
@@ -376,7 +381,10 @@
                             <div className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Dr. Kiran Madhav T</div>
                             <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-700 tracking-tight">Today</h1>
                         </div>
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border-2 border-white/50 overflow-hidden"><Icon path={Icons.Stethoscope} size={28} /></div>
+                        <div className="flex gap-2">
+                             <button onClick={onSync} className="w-10 h-10 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-600 shadow-md border-2 border-white/50"><Icon path={Icons.Cloud} size={20} /></button>
+                             <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-blue-600 shadow-glass border border-white/50"><Icon path={Icons.UserDoctor} size={24} /></div>
+                        </div>
                     </div>
 
                     {backupAlert && (
@@ -456,7 +464,7 @@
             );
         };
 
-        const VisitsList = ({ visits, onEdit, onDelete, onRepeat }) => {
+        const VisitsList = ({ visits, onEdit, onDelete, onRepeat, onAssess }) => {
             const [search, setSearch] = useState('');
             const filtered = useMemo(() => {
                 const s = search.toLowerCase();
@@ -504,6 +512,7 @@
                                         </div>
                                     </div>
                                     <div className="flex gap-3 items-center">
+                                        <button onClick={(e) => { e.stopPropagation(); onAssess(v); }} className="text-white p-2 bg-orange-500 rounded-full shadow-lg shadow-orange-500/30 active:scale-90 transition-transform"><Icon path={Icons.Activity} size={16} /></button>
                                         <button onClick={(e) => { e.stopPropagation(); onRepeat(v); }} className="text-white p-2 bg-blue-500 rounded-full shadow-lg shadow-blue-500/30 active:scale-90 transition-transform"><Icon path={Icons.Repeat} size={16} /></button>
                                         <button onClick={(e) => { e.stopPropagation(); openWhatsApp(v.phone, v.name); }} className="text-white p-2 bg-green-500 rounded-full shadow-lg shadow-green-500/30 active:scale-90 transition-transform"><Icon path={Icons.Message} size={16} fill="currentColor" /></button>
                                         <Icon path={<path d="M9 18l6-6-6-6"/>} size={16} className="text-gray-300 self-center" />
@@ -695,9 +704,12 @@
             );
         };
 
-        const SettingsView = ({ onBackup, onRestore, onReset, onExportCSV, setPin, onBack, currentPin }) => {
+        const SettingsView = ({ onBackup, onRestore, onReset, onExportCSV, setPin, onBack, currentPin, onSetSyncUrl, onSetAssessmentUrl }) => {
             const fileRef = useRef();
             const [newPin, setNewPin] = useState('');
+            const [syncUrlInput, setSyncUrlInput] = useState(SafeStorage.getItem('dm_sync_url') || '');
+            const [assessmentUrlInput, setAssessmentUrlInput] = useState(SafeStorage.getItem('dm_assessment_url') || './index.html');
+
             const handleFile = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { try { const data = JSON.parse(ev.target.result); if(confirm('Restore data?')) onRestore(data); } catch { alert("Invalid File"); } }; reader.readAsText(file); };
             const savePin = () => { if (newPin.length === 4) { setPin(newPin); alert("PIN Updated"); setNewPin(''); } else alert("PIN must be 4 digits"); };
             const handleFactoryReset = () => {
@@ -713,6 +725,16 @@
                     alert("Incorrect PIN. Reset cancelled.");
                 }
             };
+            
+            const saveSyncUrl = () => {
+                onSetSyncUrl(syncUrlInput);
+                alert("Cloud Sync URL Saved!");
+            }
+
+            const saveAssessmentUrl = () => {
+                onSetAssessmentUrl(assessmentUrlInput);
+                alert("Assessment Tool URL Saved!");
+            }
 
             return (
                 <div className="page-enter pb-24 min-h-screen">
@@ -721,6 +743,29 @@
                         <h1 className="text-3xl font-extrabold text-gray-900">Settings</h1>
                     </div>
                     <div className="px-4 mt-6 space-y-6">
+                        
+                        {/* CLOUD SYNC SECTION */}
+                         <div>
+                            <div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Cloud & Integration</div>
+                            <div className="glass-panel rounded-3xl p-4 space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Google Apps Script URL (For Sync)</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" placeholder="https://script.google.com/..." value={syncUrlInput} onChange={e => setSyncUrlInput(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none text-xs font-mono" />
+                                        <button onClick={saveSyncUrl} className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold text-xs">Save</button>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-2">Deploy a Web App in Google Apps Script to handle 'doPost' and 'doGet' for sync.</p>
+                                </div>
+                                <div className="border-t border-gray-200/50 pt-4">
+                                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Assessment Tool URL</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" placeholder="./index.html" value={assessmentUrlInput} onChange={e => setAssessmentUrlInput(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none text-xs font-mono" />
+                                        <button onClick={saveAssessmentUrl} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-xs">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Data Management</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={onBackup} className="w-full p-4 flex items-center gap-4 border-b border-gray-200/50 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><Icon path={Icons.Download} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Backup Data (JSON)</span></button><button onClick={() => fileRef.current.click()} className="w-full p-4 flex items-center gap-4 border-b border-gray-200/50 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-green-100 text-green-600 flex items-center justify-center"><Icon path={Icons.Upload} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Restore Data</span><input type="file" ref={fileRef} onChange={handleFile} className="hidden" accept=".json"/></button><button onClick={onExportCSV} className="w-full p-4 flex items-center gap-4 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><Icon path={Icons.FileText} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Export to Excel (CSV)</span></button></div></div>
                         <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Security</div><div className="glass-panel rounded-3xl p-4 flex gap-3"><input type="number" placeholder="New PIN" value={newPin} onChange={e => setNewPin(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none font-bold text-center tracking-widest placeholder-gray-400" /><button onClick={savePin} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-black/20 active:scale-95 transition-transform">Set PIN</button></div></div>
                         <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Danger Zone</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={handleFactoryReset} className="w-full p-4 flex items-center gap-4 text-red-600 active:bg-red-50/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center"><Icon path={Icons.Trash} size={18}/></div><span className="font-bold text-[16px]">Factory Reset</span></button></div></div>
@@ -731,6 +776,20 @@
 
         const EntryForm = ({ initialData, onSave, onCancel, onDelete, onReceipt, visits }) => {
             const TREATMENT_OPTIONS = ['CS', 'LBA', 'PA Shoulder', 'OA of Knee', 'Tennis Elbow', 'Stroke', 'Others'];
+            
+            // Define DEFAULT form state structure
+            const defaultFormState = { 
+                name: '', 
+                phone: '', 
+                address: '', 
+                fee: '', 
+                paymentMode: 'Cash', 
+                totalSessions: '', 
+                date: getToday(), 
+                notes: '', 
+                id: null, 
+                referralSource: 'Walk-in' 
+            };
 
             const getInitialTreatmentState = () => {
                 const data = initialData || {};
@@ -756,13 +815,20 @@
                 };
             };
 
-            const getInitialPkgMode = () => { if (initialData && initialData.paymentMode && initialData.paymentMode.includes('Package Advance')) { const match = initialData.paymentMode.match(/\(([^)]+)\)/); return match ? match[1] : 'Cash'; } return 'Cash'; };
-            const getInitialReferral = () => { return initialData && initialData.referralSource ? initialData.referralSource : 'Walk-in'; };
+            const getInitialPkgMode = () => { 
+                if (initialData && initialData.paymentMode && initialData.paymentMode.includes('Package Advance')) { 
+                    const match = initialData.paymentMode.match(/\(([^)]+)\)/); 
+                    return match ? match[1] : 'Cash'; 
+                } 
+                return 'Cash'; 
+            };
             
             const treatmentState = getInitialTreatmentState();
             const manualState = getInitialManualState();
 
-            const [form, setForm] = useState(initialData || { name: '', phone: '', address: '', fee: '', paymentMode: 'Cash', totalSessions: '', date: getToday(), notes: '', id: null, referralSource: 'Walk-in' });
+            // Use spread to ensure defaults are always present even if initialData is partial
+            const [form, setForm] = useState({ ...defaultFormState, ...initialData });
+            
             const [selectedTreatments, setSelectedTreatments] = useState(treatmentState.selection);
             const [customTreatment, setCustomTreatment] = useState(treatmentState.custom);
             const [pkgMode, setPkgMode] = useState(getInitialPkgMode());
@@ -1058,6 +1124,9 @@
             const [locked, setLocked] = useState(true);
             const [view, setView] = useState('dashboard');
             const [modalData, setModalData] = useState(null);
+            const [syncUrl, setSyncUrl] = useState(() => SafeStorage.getItem('dm_sync_url') || '');
+            const [assessmentUrl, setAssessmentUrl] = useState(() => SafeStorage.getItem('dm_assessment_url') || './index.html');
+            const [isSyncing, setIsSyncing] = useState(false);
             
             const [visits, setVisits] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_visits')) || []; } catch { return []; } });
             const [expenses, setExpenses] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_expenses')) || []; } catch { return []; } });
@@ -1086,8 +1155,10 @@
                 SafeStorage.setItem('dm_visits', JSON.stringify(visits)); 
                 SafeStorage.setItem('dm_expenses', JSON.stringify(expenses)); 
                 SafeStorage.setItem('dm_pin', pin);
+                SafeStorage.setItem('dm_sync_url', syncUrl);
+                SafeStorage.setItem('dm_assessment_url', assessmentUrl);
                 if (lastBackup) SafeStorage.setItem('dm_last_backup', lastBackup);
-            }, [visits, expenses, pin, lastBackup]);
+            }, [visits, expenses, pin, lastBackup, syncUrl, assessmentUrl]);
 
             const handleSave = (data) => { if (data.id) setVisits(prev => prev.map(v => v.id === data.id ? data : v)); else setVisits(prev => [{ ...data, id: generateId() }, ...prev]); setModalData(null); };
             
@@ -1106,6 +1177,36 @@
                     treatment: patient.treatment // Carry over last treatment
                 });
             };
+            
+            const handleSync = async () => {
+                if(!syncUrl) return alert("Please configure Google Apps Script URL in Settings first.");
+                setIsSyncing(true);
+                try {
+                    // Simple sync: push local data to sheet. 
+                    // For full bidirectional sync, you'd need a more complex merge strategy.
+                    // Here we send data to the script.
+                    await fetch(syncUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'sync_up', visits, expenses }),
+                        mode: 'no-cors' // Google Apps Script Web App constraint
+                    });
+                    alert("Sync signal sent to cloud.");
+                } catch (e) {
+                    alert("Sync Error: " + e.message);
+                } finally {
+                    setIsSyncing(false);
+                }
+            };
+            
+            const handleAssess = (patient) => {
+                const params = new URLSearchParams({
+                    name: patient.name || '',
+                    phone: patient.phone || '',
+                    address: patient.address || ''
+                });
+                window.open(`${assessmentUrl}?${params.toString()}`, '_blank');
+            };
+
 
             const handleDeleteVisit = (id) => {
                 if(confirm("Are you sure you want to delete this record? This cannot be undone.")) {
@@ -1138,10 +1239,10 @@
                 <VibrantWrapper>
                     <div className="w-full md:max-w-3xl mx-auto h-full flex flex-col shadow-2xl">
                         <div className="flex-1 overflow-y-auto no-scrollbar">
-                            {view === 'dashboard' && <Dashboard visits={visits} setView={setView} onNewVisit={() => setModalData({})} onCheckIn={handleCheckIn} lastBackup={lastBackup} />}
-                            {view === 'visits' && <VisitsList visits={visits} onEdit={setModalData} onDelete={handleDeleteVisit} onRepeat={handleRepeatVisit} />}
+                            {view === 'dashboard' && <Dashboard visits={visits} setView={setView} onNewVisit={() => setModalData({})} onCheckIn={handleCheckIn} lastBackup={lastBackup} onSync={handleSync} />}
+                            {view === 'visits' && <VisitsList visits={visits} onEdit={setModalData} onDelete={handleDeleteVisit} onRepeat={handleRepeatVisit} onAssess={handleAssess} />}
                             {view === 'finances' && <ReportsView visits={visits} expenses={expenses} onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense} />}
-                            {view === 'settings' && <SettingsView onBackup={handleBackup} onRestore={handleRestore} onReset={handleReset} onExportCSV={handleExportCSV} setPin={setPin} onBack={() => setView('dashboard')} currentPin={pin} />}
+                            {view === 'settings' && <SettingsView onBackup={handleBackup} onRestore={handleRestore} onReset={handleReset} onExportCSV={handleExportCSV} setPin={setPin} onBack={() => setView('dashboard')} currentPin={pin} onSetSyncUrl={setSyncUrl} onSetAssessmentUrl={setAssessmentUrl} />}
                         </div>
                         <div className="glass-tab pb-safe px-6 h-[88px] flex justify-between items-start pt-3 shrink-0"><NavTab active={view === 'dashboard'} onClick={() => setView('dashboard')} icon={Icons.Home} label="Today" /><NavTab active={view === 'visits'} onClick={() => setView('visits')} icon={Icons.Users} label="Patients" /><NavTab active={view === 'finances'} onClick={() => setView('finances')} icon={Icons.Chart} label="Reports" /><NavTab active={view === 'settings'} onClick={() => setView('settings')} icon={Icons.Settings} label="Settings" /></div>
                     </div>
