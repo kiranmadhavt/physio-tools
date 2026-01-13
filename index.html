@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NeuroManager">
@@ -12,7 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="https://api.dicebear.com/9.x/icons/svg?seed=Medical&backgroundColor=007AFF">
 
     <title>NeuroManager iOS</title>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -65,12 +65,12 @@
         @keyframes floatUp { from { opacity: 0; transform: translateY(100px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
+
         .glass-panel { background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
         /* HEADER FIX: Increased opacity to 0.95 and added z-index to prevent overlap */
         .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
         .glass-tab { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-top: 1px solid rgba(255, 255, 255, 0.4); }
-        
+
         .segmented-control { background: rgba(118, 118, 128, 0.12); border-radius: 9px; padding: 2px; display: flex; }
         .segmented-item { flex: 1; text-align: center; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 7px; color: #000; transition: all 0.2s; }
         .segmented-item.active { background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04); }
@@ -96,7 +96,7 @@
                         </div>
                     </div>
                 );
-                return this.props.children; 
+                return this.props.children;
             }
         }
 
@@ -155,11 +155,11 @@
             return `${parts[2]}/${parts[1]}/${parts[0]}`;
         };
         const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-        
+
         const generatePatientId = () => {
             return 'DMNPT' + Math.floor(1000 + Math.random() * 9000);
         };
-        
+
         const SafeStorage = {
             getItem: (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } },
             setItem: (key, value) => { try { localStorage.setItem(key, value); } catch (e) { } }
@@ -198,12 +198,19 @@
             </button>
         );
 
-        const StatWidget = ({ icon, label, value, color, subtext, breakdown }) => (
-            <div className="glass-panel p-4 rounded-3xl flex flex-col justify-between min-h-32 relative overflow-hidden group transition-all duration-300 hover:scale-[1.02]">
-                <div className={`absolute top-0 right-0 p-12 opacity-[0.05] transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform ${color.replace('bg-', 'text-')}`}><Icon path={icon} size={64} fill="currentColor" /></div>
-                <div className="flex justify-between items-start">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 ${color} text-white shadow-lg backdrop-blur-md`}><Icon path={icon} size={20} /></div>
-                </div>
+        const StatWidget = ({ icon, label, value, color, subtext, breakdown }) => {
+            // Extract the 'from' color for the large icon tint (e.g., from-blue-500 -> text-blue-500)
+            const getTextColor = (bgClass) => {
+                const match = bgClass.match(/from-(\w+-\d+)/);
+                return match ? `text-${match[1]}` : 'text-gray-500';
+            };
+
+            return (
+                <div className="glass-panel p-4 rounded-3xl flex flex-col justify-between min-h-32 relative overflow-hidden group transition-all duration-300 hover:scale-[1.02]">
+                    <div className={`absolute top-0 right-0 p-12 opacity-[0.05] transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform ${getTextColor(color)}`}><Icon path={icon} size={64} fill="currentColor" /></div>
+                    <div className="flex justify-between items-start">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 ${color} text-white shadow-lg backdrop-blur-md`}><Icon path={icon} size={20} /></div>
+                    </div>
                 <div>
                     <div className="text-sm font-semibold text-gray-500">{label}</div>
                     <div className="text-2xl font-bold text-gray-900 tracking-tight">{value}</div>
@@ -216,18 +223,19 @@
                     )}
                 </div>
             </div>
-        );
+            );
+        };
 
         const IOSInput = ({ value, onChange, placeholder, type = "text", label, readOnly }) => (
             <div className="mb-4">
                 {label && <label className="block text-xs font-bold text-gray-500 uppercase ml-3 mb-1.5 tracking-wide">{label}</label>}
-                <input 
-                    type={type} 
-                    value={value} 
-                    onChange={onChange} 
-                    placeholder={placeholder} 
+                <input
+                    type={type}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
                     readOnly={readOnly}
-                    className={`w-full bg-white/60 backdrop-blur-md p-4 rounded-2xl text-[17px] text-gray-900 placeholder-gray-400 shadow-sm border border-white/40 focus:ring-2 focus:ring-ios-blue/30 outline-none transition-all ${readOnly ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`} 
+                    className={`w-full bg-white/60 backdrop-blur-md p-4 rounded-2xl text-[17px] text-gray-900 placeholder-gray-400 shadow-sm border border-white/40 focus:ring-2 focus:ring-ios-blue/30 outline-none transition-all ${readOnly ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`}
                 />
             </div>
         );
@@ -235,12 +243,12 @@
         const IOSTextArea = ({ value, onChange, placeholder, label }) => (
             <div className="mb-4">
                 {label && <label className="block text-xs font-bold text-gray-500 uppercase ml-3 mb-1.5 tracking-wide">{label}</label>}
-                <textarea 
-                    value={value} 
-                    onChange={onChange} 
-                    placeholder={placeholder} 
+                <textarea
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
                     rows="3"
-                    className="w-full bg-white/60 backdrop-blur-md p-4 rounded-2xl text-[17px] text-gray-900 placeholder-gray-400 shadow-sm border border-white/40 focus:ring-2 focus:ring-ios-blue/30 outline-none transition-all resize-none font-sans" 
+                    className="w-full bg-white/60 backdrop-blur-md p-4 rounded-2xl text-[17px] text-gray-900 placeholder-gray-400 shadow-sm border border-white/40 focus:ring-2 focus:ring-ios-blue/30 outline-none transition-all resize-none font-sans"
                 />
             </div>
         );
@@ -279,7 +287,7 @@
                         <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(168,85,247,0.4)]" style={{width: `${progress}%`}}></div>
                     </div>
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={() => onCheckIn(pkg)}
                             disabled={isFull}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${isFull ? 'bg-gray-100 text-gray-400' : 'bg-ios-purple text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 active:scale-95'}`}
@@ -305,7 +313,7 @@
                 return days;
             }, [visits]);
 
-            const max = Math.max(...data.map(d => d.value), 100); 
+            const max = Math.max(...data.map(d => d.value), 100);
 
             return (
                 <div className="glass-panel p-4 rounded-3xl mb-6">
@@ -314,7 +322,7 @@
                         {data.map((d, i) => (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
                                 <div className="w-full bg-blue-100/50 rounded-t-lg relative h-full overflow-hidden">
-                                    <div 
+                                    <div
                                         className="absolute bottom-0 w-full bg-gradient-to-t from-blue-500 to-indigo-500 rounded-t-lg transition-all duration-1000 ease-out group-hover:bg-indigo-400"
                                         style={{ height: `${(d.value / max) * 100}%` }}
                                     ></div>
@@ -331,7 +339,7 @@
 
         const Dashboard = ({ visits, setView, onNewVisit, onCheckIn, lastBackup, onSync }) => {
             const today = getToday();
-            
+
             const backupAlert = useMemo(() => {
                 if (!lastBackup) return "Backup Required!";
                 const diff = (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24);
@@ -357,10 +365,10 @@
                 allToday.forEach(v => {
                     const fee = parseFloat(v.fee) || 0;
                     income += fee;
-                    
+
                     const isPackage = v.paymentMode.includes('Package Advance');
                     const mode = v.paymentMode.toLowerCase();
-                    
+
                     if (fee > 0) {
                         if (mode.includes('cash') || (isPackage && mode.includes('cash'))) {
                             cash += fee;
@@ -368,7 +376,7 @@
                             online += fee;
                         } else {
                             // Default fallback to cash if unspecified but paid
-                            cash += fee; 
+                            cash += fee;
                         }
                     }
 
@@ -377,8 +385,8 @@
                     if (v.paymentMode === 'Package Advance') count++; // New package purchase
                 });
 
-                return { 
-                    income, 
+                return {
+                    income,
                     count,
                     breakdown: {
                         cash: formatCurrency(cash),
@@ -412,13 +420,13 @@
                     )}
 
                     <div className="px-5 grid grid-cols-2 gap-4 mb-8">
-                        <StatWidget 
-                            icon={Icons.Rupee} 
-                            label="Revenue" 
-                            value={formatCurrency(todayStats.income)} 
-                            color="bg-gradient-to-br from-blue-500 to-indigo-600" 
+                        <StatWidget
+                            icon={Icons.Rupee}
+                            label="Revenue"
+                            value={formatCurrency(todayStats.income)}
+                            color="bg-gradient-to-br from-blue-500 to-indigo-600"
                             subtext="Updated just now"
-                            breakdown={todayStats.breakdown} 
+                            breakdown={todayStats.breakdown}
                         />
                         <StatWidget icon={Icons.Users} label="Patients" value={todayStats.count} color="bg-gradient-to-br from-emerald-400 to-teal-500" subtext="Total visits today" />
                     </div>
@@ -481,16 +489,16 @@
             const [search, setSearch] = useState('');
             const filtered = useMemo(() => {
                 const s = search.toLowerCase();
-                const list = visits.filter(v => 
-                    (v.name && v.name.toLowerCase().includes(s)) || 
-                    (v.phone && v.phone.toLowerCase().includes(s)) || 
+                const list = visits.filter(v =>
+                    (v.name && v.name.toLowerCase().includes(s)) ||
+                    (v.phone && v.phone.toLowerCase().includes(s)) ||
                     (v.address && v.address.toLowerCase().includes(s)) ||
                     (v.patientId && v.patientId.toLowerCase().includes(s))
                 );
                 // Strict Sort by Date (Newest First)
                 return list.sort((a,b) => b.date.localeCompare(a.date));
             }, [visits, search]);
-            
+
             const openWhatsApp = (phone, name) => {
                 const text = `Hello ${name}, this is from Dr. Kiran Madhav (DM Neuro Clinic). Regarding your consultation...`;
                 window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(text)}`, '_blank');
@@ -629,7 +637,7 @@
                     printWindow.document.write(`<div class="summary">Net Income: ${formatCurrency(totalInc - totalExp)} <br> (Income: ${formatCurrency(totalInc)} - Expense: ${formatCurrency(totalExp)})</div>`);
                     printWindow.document.write(`<div class="breakdown">Cash: ${formatCurrency(cashTotal)} | Online: ${formatCurrency(onlineTotal)}</div>`);
                     printWindow.document.write(`<div class="breakdown">Referrals (Dr. Venkat): ${referralCount} (${formatCurrency(referralRevenue)}) | Walk-ins: ${walkInCount} (${formatCurrency(walkInRevenue)})</div>`);
-                    
+
                     if(filteredExpenses.length > 0) {
                         printWindow.document.write('<h4>Expenses</h4><table><thead><tr><th>Category</th><th>Description</th><th>Date</th><th class="amount">Amount</th></tr></thead><tbody>');
                         filteredExpenses.forEach(e => {
@@ -687,10 +695,10 @@
                         </div>
                         <SegmentedControl options={['Overview', 'Expenses']} active={tab} onChange={setTab} />
                     </div>
-                    
+
                     {tab === 'Overview' && (<div className="px-4 mt-4 space-y-4"><SegmentedControl options={['Daily', 'Monthly', 'Yearly']} active={period} onChange={setPeriod} /><div className="glass-panel p-5 rounded-3xl"><h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6">Performance Trend</h3><div className="flex items-end justify-between h-32 gap-3">{reportData.slice(0, 7).reverse().map((d, i) => { const max = Math.max(...reportData.map(r => Math.max(r.income, r.expense)), 100); return (<div key={i} className="flex-1 flex flex-col items-center gap-2 group"><div className="w-full flex justify-center items-end gap-1 h-full"><div className="w-3 bg-blue-500 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity" style={{height: `${(d.income/max)*100}%`}}></div><div className="w-3 bg-red-400 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity" style={{height: `${(d.expense/max)*100}%`}}></div></div><div className="text-[10px] font-bold text-gray-400 w-full text-center">{d.label.split('-').pop()}</div></div>) })}{reportData.length === 0 && <div className="text-center w-full text-gray-400 text-xs font-medium">No Data Available</div>}</div></div><div className="glass-panel rounded-3xl overflow-hidden"><div className="p-4 bg-gray-50/50 border-b border-gray-200/50 flex text-xs font-bold text-gray-400 uppercase tracking-wider"><div className="flex-1">Period</div><div className="w-20 text-right">Income</div><div className="w-20 text-right">Net</div></div>{reportData.map((row, i) => (<div key={i} className="p-4 border-b border-gray-200/50 flex items-center text-sm"><div className="flex-1 font-bold text-gray-800">{row.label}</div><div className="w-20 text-right text-gray-600 font-medium">{formatCurrency(row.income)}</div><div className={`w-20 text-right font-bold ${row.income - row.expense >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(row.income - row.expense)}</div></div>))}</div></div>)}
                     {tab === 'Expenses' && (<div className="px-4 mt-4"><div className="glass-panel rounded-3xl overflow-hidden">{expenses.map((e, i) => (<div key={e.id} className="p-4 flex justify-between items-center border-b border-gray-200/50 last:border-0 hover:bg-white/40"><div><div className="font-bold text-gray-900">{e.description}</div><div className="text-xs font-medium text-gray-500">{e.date} • {e.category}</div></div><div className="text-right"><div className="font-bold text-red-500">-{formatCurrency(e.amount)}</div><button onClick={() => onDeleteExpense(e.id)} className="text-[10px] text-gray-400 font-bold hover:text-red-500 transition-colors mt-1">DELETE</button></div></div>))}{expenses.length === 0 && <div className="p-12 text-center text-gray-400 font-medium">No expenses logged.</div>}</div></div>)}
-                    
+
                     {showExpModal && (<div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter"><div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowExpModal(false)}></div><div className="relative w-full md:max-w-lg mx-auto my-auto z-10 bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/50"><h3 className="text-xl font-bold mb-6 text-gray-900">Log Expense</h3>
                     <IOSSelect label="Category" options={['Rent', 'Salary', 'Equipment', 'Consumables', 'Marketing', 'Utilities', 'Other']} value={newExp.category} onChange={e => setNewExp({...newExp, category: e.target.value})} />
                     <IOSInput label="Description" value={newExp.description} onChange={e => setNewExp({...newExp, description: e.target.value})} placeholder="e.g. November Rent" /><IOSInput label="Amount" type="number" value={newExp.amount} onChange={e => setNewExp({...newExp, amount: e.target.value})} placeholder="0.00" /><IOSInput label="Date" type="date" value={newExp.date} onChange={e => setNewExp({...newExp, date: e.target.value})} /><div className="flex gap-3 mt-8"><button onClick={() => setShowExpModal(false)} className="flex-1 py-3.5 text-gray-600 font-bold bg-gray-200/50 rounded-2xl hover:bg-gray-200 transition-colors">Cancel</button><button onClick={saveExpense} className="flex-1 py-3.5 text-white font-bold bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">Save</button></div></div></div>)}
@@ -743,7 +751,7 @@
                     alert("Incorrect PIN. Reset cancelled.");
                 }
             };
-            
+
             const saveSyncUrl = () => {
                 onSetSyncUrl(syncUrlInput);
                 alert("Cloud Sync URL Saved!");
@@ -761,7 +769,7 @@
                         <h1 className="text-3xl font-extrabold text-gray-900">Settings</h1>
                     </div>
                     <div className="px-4 mt-6 space-y-6">
-                        
+
                         {/* CLOUD SYNC SECTION */}
                          <div>
                             <div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Cloud & Integration</div>
@@ -794,21 +802,21 @@
 
         const EntryForm = ({ initialData, onSave, onCancel, onDelete, onReceipt, visits }) => {
             const TREATMENT_OPTIONS = ['CS', 'LBA', 'PA Shoulder', 'OA of Knee', 'Tennis Elbow', 'Stroke', 'Others'];
-            
+
             // Define DEFAULT form state structure
-            const defaultFormState = { 
-                name: '', 
+            const defaultFormState = {
+                name: '',
                 age: '',
                 sex: 'Male',
-                phone: '', 
-                address: '', 
-                fee: '', 
-                paymentMode: 'Cash', 
-                totalSessions: '', 
-                date: getToday(), 
-                notes: '', 
-                id: null, 
-                referralSource: 'Walk-in' 
+                phone: '',
+                address: '',
+                fee: '',
+                paymentMode: 'Cash',
+                totalSessions: '',
+                date: getToday(),
+                notes: '',
+                id: null,
+                referralSource: 'Walk-in'
             };
 
             const getInitialTreatmentState = () => {
@@ -820,41 +828,50 @@
                 if (custom && !selection.includes('Others')) selection.push('Others');
                 return { selection, custom };
             };
-            
+
             // Reconstruct Manual Therapy State from saved data
             const getInitialManualState = () => {
                 const data = initialData || {};
+                const details = data.feeDetails || {};
                 const savedString = data.treatment || '';
                 const dry = savedString.includes("Dry Needling");
                 const kinesio = savedString.includes("Kinesio Taping");
-                // Note: We don't have saved prices, so we leave them empty for new entry, but user can see checkmark
+                // Uses saved breakdown if available, otherwise defaults to empty (legacy support)
                 return {
-                    dryNeedling: { selected: dry, price: '' },
-                    kinesio: { selected: kinesio, price: '' },
-                    others: { selected: false, name: '', price: '' }
+                    dryNeedling: { selected: dry, price: details.dryNeedling || '' },
+                    kinesio: { selected: kinesio, price: details.kinesio || '' },
+                    others: { selected: false, name: '', price: details.others || '' }
                 };
             };
 
-            const getInitialPkgMode = () => { 
-                if (initialData && initialData.paymentMode && initialData.paymentMode.includes('Package Advance')) { 
-                    const match = initialData.paymentMode.match(/\(([^)]+)\)/); 
-                    return match ? match[1] : 'Cash'; 
-                } 
-                return 'Cash'; 
+            const getInitialPkgMode = () => {
+                if (initialData && initialData.paymentMode && initialData.paymentMode.includes('Package Advance')) {
+                    const match = initialData.paymentMode.match(/\(([^)]+)\)/);
+                    return match ? match[1] : 'Cash';
+                }
+                return 'Cash';
             };
-            
+
             const treatmentState = getInitialTreatmentState();
             const manualState = getInitialManualState();
 
             // Use spread to ensure defaults are always present even if initialData is partial
-            const [form, setForm] = useState({ ...defaultFormState, ...initialData });
-            
+            const [form, setForm] = useState(() => {
+                const baseState = { ...defaultFormState, ...initialData };
+                // If we have feeDetails, the stored 'fee' is likely the TOTAL.
+                // We want to load the BASE fee into the input.
+                if (initialData && initialData.feeDetails && initialData.feeDetails.base) {
+                    baseState.fee = initialData.feeDetails.base;
+                }
+                return baseState;
+            });
+
             const [selectedTreatments, setSelectedTreatments] = useState(treatmentState.selection);
             const [customTreatment, setCustomTreatment] = useState(treatmentState.custom);
             const [pkgMode, setPkgMode] = useState(getInitialPkgMode());
             const [manualTherapy, setManualTherapy] = useState(manualState);
             const [pastVisits, setPastVisits] = useState([]);
-            
+
             // NEW: Add patientId to state, generate ONLY if it's a completely new entry (no ID passed)
             // AND ensure it persists if passed in initialData.
             useEffect(() => {
@@ -866,12 +883,12 @@
             // Calculate past visits on mount or phone change
             useEffect(() => {
                 if (form.phone && visits) {
-                    const history = visits.filter(v => 
-                        v.phone === form.phone && 
+                    const history = visits.filter(v =>
+                        v.phone === form.phone &&
                         v.id !== form.id // Don't show current edit record
                     ).sort((a,b) => b.date.localeCompare(a.date));
                     setPastVisits(history.slice(0, 3)); // Top 3
-                    
+
                     // SMART AUTO-FILL: If found existing patient, and we are in NEW mode (no ID), fill details
                     if (history.length > 0 && !form.id) {
                          const latest = history[0];
@@ -886,7 +903,7 @@
                     }
                 }
             }, [form.phone, visits, form.id]);
-            
+
             // Patient Loyalty Stats
             const patientStats = useMemo(() => {
                 if (form.phone && visits) {
@@ -912,7 +929,7 @@
                     setSelectedTreatments(prev => [...prev, t]);
                 }
             };
-            
+
             const toggleManual = (key) => {
                 setManualTherapy(prev => ({
                     ...prev,
@@ -926,7 +943,7 @@
                     [key]: { ...prev[key], price: val }
                 }));
             };
-            
+
             const updateManualName = (val) => {
                 setManualTherapy(prev => ({
                     ...prev,
@@ -943,15 +960,15 @@
                 return base;
             }, [form.fee, manualTherapy]);
 
-            const handleSubmit = () => { 
-                if (!form.name || form.fee === '') return alert("Name and Fee required"); 
-                
+            const handleSubmit = () => {
+                if (!form.name || form.fee === '') return alert("Name and Fee required");
+
                 let finalTreatments = selectedTreatments.filter(t => t !== 'Others');
                 if (selectedTreatments.includes('Others')) {
                     if (customTreatment.trim()) finalTreatments.push(customTreatment.trim());
                     else return alert("Please specify the condition for 'Others'.");
                 }
-                
+
                 // Add manual therapies to treatment string
                 if (manualTherapy.dryNeedling.selected && !finalTreatments.includes("Dry Needling")) finalTreatments.push("Dry Needling");
                 if (manualTherapy.kinesio.selected && !finalTreatments.includes("Kinesio Taping")) finalTreatments.push("Kinesio Taping");
@@ -966,17 +983,26 @@
                 const isPackage = form.paymentMode === 'Package Advance';
                 let finalPaymentMode = form.paymentMode;
                 if (isPackage) finalPaymentMode = `Package Advance (${pkgMode})`;
-                
-                const finalData = { 
-                    ...form, 
-                    fee: calculatedTotal.toString(), 
-                    treatment: finalTreatmentString,
-                    paymentMode: finalPaymentMode, 
-                    isPackagePurchase: isPackage, 
-                    packageId: isPackage ? (form.packageId || generateId()) : null, 
-                    totalSessions: isPackage ? (form.totalSessions || 10) : null 
+
+                // Construct breakdown
+                const feeDetails = {
+                    base: form.fee,
+                    dryNeedling: manualTherapy.dryNeedling.selected ? manualTherapy.dryNeedling.price : '0',
+                    kinesio: manualTherapy.kinesio.selected ? manualTherapy.kinesio.price : '0',
+                    others: manualTherapy.others.selected ? manualTherapy.others.price : '0'
                 };
-                onSave(finalData); 
+
+                const finalData = {
+                    ...form,
+                    fee: calculatedTotal.toString(),
+                    feeDetails, // Save the breakdown
+                    treatment: finalTreatmentString,
+                    paymentMode: finalPaymentMode,
+                    isPackagePurchase: isPackage,
+                    packageId: isPackage ? (form.packageId || generateId()) : null,
+                    totalSessions: isPackage ? (form.totalSessions || 10) : null
+                };
+                onSave(finalData);
             };
 
             const handleGenerateReceipt = () => {
@@ -996,17 +1022,17 @@
                 <div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter">
                     {/* Dark Backdrop for Modal Effect on iPad/Desktop */}
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel}></div>
-                    
+
                     {/* The Card/Sheet Content */}
                     <div className="relative w-full md:max-w-2xl h-full md:h-[90vh] bg-white md:rounded-3xl flex flex-col overflow-hidden shadow-2xl mx-auto my-0 md:my-auto z-10 animate-slide-up">
-                        
+
                         {/* Header */}
                         <div className="glass-header sticky top-0 px-4 py-4 flex justify-center items-center z-20 border-b border-white/40 bg-white/80 backdrop-blur-md">
                             <span className="font-extrabold text-lg text-gray-800 tracking-tight">{form.id ? 'Edit Consultation' : 'New Consultation'}</span>
                         </div>
-                        
+
                         <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-24 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-                            
+
                             {/* NEW: Patient ID Banner */}
                             <div className="bg-blue-50/50 p-3 rounded-2xl flex justify-between items-center border border-blue-100">
                                 <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">Patient ID</span>
@@ -1016,7 +1042,7 @@
                             <div className="glass-panel rounded-3xl p-2">
                                 <IOSInput label="Patient Name" placeholder="Enter Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                                 <div className="h-[1px] bg-gray-200/50 mx-4"></div>
-                                
+
                                 {/* NEW ROW FOR AGE AND SEX */}
                                 <div className="flex flex-row">
                                     <div className="flex-1 border-r border-gray-200/50">
@@ -1057,7 +1083,7 @@
                                     </button>
                                 ))}
                             </div>
-                            
+
                             <div className="glass-panel rounded-3xl p-2">
                                 <IOSInput label="Base Fee (₹)" placeholder="0" type="number" value={form.fee} onChange={e => setForm({...form, fee: e.target.value})} />
                                 <div className="h-[1px] bg-gray-200/50 mx-4"></div>
@@ -1074,11 +1100,11 @@
                                     {selectedTreatments.includes('Others') && (<div className="animate-fade-in mt-4"><IOSInput label="Specify Condition" placeholder="e.g. Cerebral Palsy" value={customTreatment} onChange={e => setCustomTreatment(e.target.value)} /></div>)}
                                 </div>
                                 <div className="h-[1px] bg-gray-200/50 mx-4"></div>
-                                
+
                                 {/* Manual Therapy Section */}
                                 <div className="p-4 bg-blue-50/30">
                                     <label className="block text-xs font-bold text-blue-600 uppercase mb-3 tracking-wide flex items-center gap-2"><Icon path={Icons.Plus} size={14}/> Manual Therapy & Extras</label>
-                                    
+
                                     {/* Dry Needling */}
                                     <div className="flex items-center gap-3 mb-3">
                                         <button onClick={() => toggleManual('dryNeedling')} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${manualTherapy.dryNeedling.selected ? 'bg-blue-500 text-white shadow-md' : 'bg-white border text-gray-500'}`}>Dry-Needling</button>
@@ -1140,7 +1166,7 @@
                                     <button onClick={() => onDelete(form.id)} className="flex-1 py-3 bg-red-50/80 text-red-600 font-bold rounded-2xl shadow-sm border border-red-100 flex items-center justify-center gap-2"><Icon path={Icons.Trash} size={18} /> Delete</button>
                                 </div>
                             )}
-                            
+
                             {/* Spacer for bottom safe area visual comfort if scrolling */}
                             <div className="h-4"></div>
                         </div>
@@ -1185,7 +1211,7 @@
             const [locked, setLocked] = useState(true);
             const [view, setView] = useState('dashboard');
             const [modalData, setModalData] = useState(null);
-            
+
             const [visits, setVisits] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_visits')) || []; } catch { return []; } });
             const [expenses, setExpenses] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_expenses')) || []; } catch { return []; } });
             const [pin, setPin] = useState(() => SafeStorage.getItem('dm_pin') || '7177');
@@ -1212,9 +1238,9 @@
                 };
             }, []);
 
-            useEffect(() => { 
-                SafeStorage.setItem('dm_visits', JSON.stringify(visits)); 
-                SafeStorage.setItem('dm_expenses', JSON.stringify(expenses)); 
+            useEffect(() => {
+                SafeStorage.setItem('dm_visits', JSON.stringify(visits));
+                SafeStorage.setItem('dm_expenses', JSON.stringify(expenses));
                 SafeStorage.setItem('dm_pin', pin);
                 SafeStorage.setItem('dm_sync_url', syncUrl);
                 SafeStorage.setItem('dm_assessment_url', assessmentUrl);
@@ -1222,7 +1248,7 @@
             }, [visits, expenses, pin, lastBackup, syncUrl, assessmentUrl]);
 
             const handleSave = (data) => { if (data.id) setVisits(prev => prev.map(v => v.id === data.id ? data : v)); else setVisits(prev => [{ ...data, id: generateId() }, ...prev]); setModalData(null); };
-            
+
             const handleRepeatVisit = (patient) => {
                 setModalData({
                     id: null, // New ID will be generated on save
@@ -1240,12 +1266,12 @@
                     treatment: patient.treatment // Carry over last treatment
                 });
             };
-            
+
             const handleSync = async () => {
                 if(!syncUrl) return alert("Please configure Google Apps Script URL in Settings first.");
                 setIsSyncing(true);
                 try {
-                    // Simple sync: push local data to sheet. 
+                    // Simple sync: push local data to sheet.
                     // For full bidirectional sync, you'd need a more complex merge strategy.
                     // Here we send data to the script.
                     await fetch(syncUrl, {
@@ -1260,7 +1286,7 @@
                     setIsSyncing(false);
                 }
             };
-            
+
             const handleAssess = (patient) => {
                 const params = new URLSearchParams({
                     name: patient.name || '',
@@ -1292,10 +1318,10 @@
             const handleDeleteExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
             const handleBackup = () => { const dataStr = JSON.stringify({ visits, expenses, date: new Date().toISOString() }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([dataStr], { type: "application/json" })); link.download = `Backup_${getToday()}.json`; link.click(); setLastBackup(new Date().toISOString()); };
             const handleRestore = (data) => { if(data.visits) setVisits(data.visits); if(data.expenses) setExpenses(data.expenses); alert("Data Restored!"); };
-            const handleReset = () => { 
-                setVisits([]); 
-                setExpenses([]); 
-                alert("System Reset"); 
+            const handleReset = () => {
+                setVisits([]);
+                setExpenses([]);
+                alert("System Reset");
             };
             const handleExportCSV = () => { const csv = "Date,Name,Fee,Treatment,Payment\n" + visits.map(v => `${v.date},"${v.name}",${v.fee},${v.treatment},${v.paymentMode}`).join("\n"); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); link.download = `Visits_${getToday()}.csv`; link.click(); };
 
