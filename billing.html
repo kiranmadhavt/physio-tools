@@ -32,10 +32,15 @@
 
             const addEntry = () => {
                 if (!name || !amount) return;
+                const val = parseFloat(amount);
+                if (isNaN(val)) {
+                    alert("Please enter a valid amount");
+                    return;
+                }
                 const newEntry = {
                     id: Date.now(),
                     name: name,
-                    amount: parseFloat(amount),
+                    amount: val,
                     time: new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})
                 };
                 setPatients([newEntry, ...patients]); // Add to top
