@@ -8,11 +8,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NeuroManager">
 
-    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-180.png">
-
-
     <title>NeuroManager iOS</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -398,7 +396,10 @@
                         </div>
                         <div className="flex gap-2">
                              <button onClick={onSync} className="w-10 h-10 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-600 shadow-md border-2 border-white/50"><Icon path={Icons.Cloud} size={20} /></button>
-                             <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-blue-600 shadow-glass border border-white/50"><Icon path={Icons.UserDoctor} size={24} /></div>
+                             {/* UPDATED: User Profile Icon changed to Image */}
+                             <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center shadow-glass border border-white/50 overflow-hidden">
+                                <img src="icon-180.png" alt="Doctor Profile" className="w-full h-full object-cover" />
+                             </div>
                         </div>
                     </div>
 
@@ -1328,4 +1329,3 @@
     </script>
 </body>
 </html>
-
