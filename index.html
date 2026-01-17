@@ -2,23 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-    <!-- iOS PWA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NeuroManager">
 
-    <!-- ✅ APP ICONS (LOCAL PNG – CORRECT WAY) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="icon-180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-180.png">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/9.x/icons/svg?seed=Medical&backgroundColor=007AFF">
+    <link rel="icon" type="image/svg+xml" href="https://api.dicebear.com/9.x/icons/svg?seed=Medical&backgroundColor=007AFF">
 
     <title>NeuroManager iOS</title>
-
-    <!-- Libraries -->
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -26,57 +20,1309 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Tailwind config (UNCHANGED) -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
-                    },
+                    fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'] },
                     colors: {
                         ios: {
-                            bg: '#F2F2F7',
-                            card: '#FFFFFF',
-                            blue: '#007AFF',
-                            red: '#FF3B30',
-                            green: '#34C759',
-                            orange: '#FF9500',
-                            purple: '#AF52DE',
-                            teal: '#5AC8FA',
-                            gray: '#8E8E93',
-                            gray2: '#AEAEB2',
-                            separator: '#C6C6C8',
+                            bg: '#F2F2F7', card: '#FFFFFF', blue: '#007AFF', red: '#FF3B30',
+                            green: '#34C759', orange: '#FF9500', purple: '#AF52DE', teal: '#5AC8FA',
+                            gray: '#8E8E93', gray2: '#AEAEB2', separator: '#C6C6C8',
                         }
-                    }
+                    },
+                    boxShadow: {
+                        'ios': '0 2px 12px rgba(0, 0, 0, 0.06)',
+                        'float': '0 8px 30px rgba(0, 0, 0, 0.12)',
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                    },
+                    animation: {
+                        blob: "blob 10s infinite",
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" },
+                        },
+                    },
                 }
             }
         }
     </script>
 
-    <!-- Styles (UNCHANGED) -->
     <style>
-        body {
-            background-color: #000;
-            color: #000;
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
-        }
+        body { background-color: #000; color: #000; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
+        .page-enter { animation: slideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .modal-enter { animation: floatUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .scale-tap:active { transform: scale(0.96); transition: transform 0.1s; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes floatUp { from { opacity: 0; transform: translateY(100px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
+        /* HEADER FIX: Increased opacity to 0.95 and added z-index to prevent overlap */
+        .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
+        .glass-tab { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-top: 1px solid rgba(255, 255, 255, 0.4); }
+        
+        .segmented-control { background: rgba(118, 118, 128, 0.12); border-radius: 9px; padding: 2px; display: flex; }
+        .segmented-item { flex: 1; text-align: center; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 7px; color: #000; transition: all 0.2s; }
+        .segmented-item.active { background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04); }
     </style>
 </head>
-
 <body>
     <div id="root"></div>
 
-    <!-- 🔴 EVERYTHING BELOW THIS REMAINS EXACTLY THE SAME -->
-    <!-- 🔴 YOUR REACT + APP CODE UNCHANGED -->
-
     <script type="text/babel">
-        /* YOUR FULL APP CODE CONTINUES HERE
-           (unchanged – omitted for brevity in explanation,
-            but keep your full existing script block exactly as-is) */
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- ERROR BOUNDARY ---
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) return (
+                    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-6 text-center">
+                        <div>
+                            <h2 className="text-2xl font-bold text-red-500 mb-2">Something went wrong.</h2>
+                            <p className="text-sm text-gray-300 bg-gray-800 p-4 rounded-xl font-mono mb-4 overflow-auto max-h-48">{this.state.error ? this.state.error.toString() : 'Unknown Error'}</p>
+                            <button onClick={() => window.location.reload()} className="bg-white text-black px-6 py-3 rounded-xl font-bold active:scale-95 transition-transform">Reload App</button>
+                        </div>
+                    </div>
+                );
+                return this.props.children; 
+            }
+        }
+
+        // --- ICONS ---
+        const Icon = ({ path, size = 24, className = "", fill = "none", strokeWidth = 2 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>{path}</svg>
+        );
+
+        const Icons = {
+            Home: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />,
+            Users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+            Chart: <path d="M18 20V10M12 20V4M6 20v-6" />,
+            Plus: <path d="M12 5v14M5 12h14" />,
+            Settings: <><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>,
+            ChevronLeft: <path d="M15 18l-6-6 6-6" />,
+            Search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+            Trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
+            Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+            Wallet: <><path d="M20 7h-7"/><path d="M14 11h6"/><path d="M11 15h9"/><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M6 7v10"/></>,
+            Rupee: <><path d="M6 3h12"/><path d="M6 8h12"/><path d="M11 21l9-8"/><path d="M6 13h3a4 4 0 0 0 0-8"/></>,
+            Download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>,
+            Upload: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>,
+            FileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+            Package: <><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-9 5.19"/><path d="m21 16-9 5.19"/><path d="m21 16-9-5.19"/><path d="M12 22v-9"/><path d="m12 13 9-5.19"/><path d="m12 13-9-5.19"/></>,
+            CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+            Message: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>,
+            Share: <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></>,
+            Printer: <><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></>,
+            Copy: <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+            Receipt: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+            Repeat: <><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></>,
+            Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+            XCircle: <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>,
+            Activity: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
+            Cloud: <><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></>,
+            Link: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
+            UserDoctor: <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 12v3"/><path d="M10 13.5h4"/></>,
+            IDCard: <><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></>,
+            WhatsApp: <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+        };
+
+        // --- UTILS ---
+        const formatCurrency = (amount) => {
+            const val = parseFloat(amount);
+            if (isNaN(val)) return '₹0';
+            return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(val);
+        };
+        const getToday = () => {
+            const d = new Date();
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().split('T')[0];
+        };
+        const formatDate = (dateStr) => {
+            if(!dateStr) return '';
+            const parts = dateStr.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        };
+        const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        
+        const generatePatientId = () => {
+            return 'DMNPT' + Math.floor(1000 + Math.random() * 9000);
+        };
+        
+        const SafeStorage = {
+            getItem: (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } },
+            setItem: (key, value) => { try { localStorage.setItem(key, value); } catch (e) { } }
+        };
+        const getReportKey = (dateStr, type) => {
+            if (!dateStr) return 'Unknown';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return 'Unknown';
+            const [yStr, mStr, dStr] = parts;
+            const y = parseInt(yStr), m = parseInt(mStr), d = parseInt(dStr);
+            if (type === 'Daily') return dateStr;
+            if (type === 'Monthly') return `${yStr}-${String(m).padStart(2,'0')}`;
+            if (type === 'Yearly') return `${yStr}`;
+            return dateStr;
+        };
+
+        // --- WRAPPERS ---
+        const VibrantWrapper = ({ children }) => (
+            <div className="h-[100dvh] w-full bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden flex flex-col">
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
+                    <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-purple-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
+                    <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-pink-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000"></div>
+                </div>
+                <div className="relative z-10 h-full w-full">{children}</div>
+            </div>
+        );
+
+        // --- COMPONENTS ---
+        const NavTab = ({ active, onClick, icon, label }) => (
+            <button onClick={onClick} className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-300 scale-tap`}>
+                <div className={`transition-all duration-300 ${active ? 'text-ios-blue scale-110 drop-shadow-md' : 'text-gray-400'}`}>
+                    <Icon path={icon} size={24} strokeWidth={active ? 2.5 : 2} />
+                </div>
+                <span className={`text-[10px] font-bold ${active ? 'text-ios-blue' : 'text-gray-400'}`}>{label}</span>
+            </button>
+        );
+
+        const StatWidget = ({ icon, label, value, color, subtext, breakdown }) => (
+            <div className="glass-panel p-4 rounded-3xl flex flex-col justify-between min-h-32 relative overflow-hidden group transition-all duration-300 hover:scale-[1.02]">
+                <div className={`absolute top-0 right-0 p-12 opacity-[0.05] transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform ${color.replace('bg-', 'text-')}`}><Icon path={icon} size={64} fill="currentColor" /></div>
+                <div className="flex justify-between items-start">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 ${color} text-white shadow-lg backdrop-blur-md`}><Icon path={icon} size={20} /></div>
+                </div>
+                <div>
+                    <div className="text-sm font-semibold text-gray-500">{label}</div>
+                    <div className="text-2xl font-bold text-gray-900 tracking-tight">{value}</div>
+                    {subtext && <div className="text-[10px] text-gray-500 font-medium mt-1">{subtext}</div>}
+                    {breakdown && (
+                        <div className="mt-2 pt-2 border-t border-gray-200/50 flex gap-2 text-[10px] font-semibold text-gray-600">
+                            <span className="bg-white/50 px-1.5 py-0.5 rounded">💵 {breakdown.cash}</span>
+                            <span className="bg-white/50 px-1.5 py-0.5 rounded">💳 {breakdown.online}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+
+        const IOSInput = ({ value, onChange, placeholder, type = "text", label, readOnly }) => (
+            <div className="mb-4">
+                {label && <label className="block text-xs font-bold text-gray-500 uppercase ml-3 mb-1.5 tracking-wide">{label}</label>}
+                <input 
+                    type={type} 
+                    value={value} 
+                    onChange={onChange} 
+                    placeholder={placeholder} 
+                    readOnly={readOnly}
+                    className={`w-full bg-white/60 backdrop-blur-md p-4 rounded-2xl text-[17px] text-gray-900 placeholder-gray-400 shadow-sm border border-white/40 focus:ring-2 focus:ring-ios-blue/30 outline-none transition-all ${readOnly ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`} 
+                />
+            </div>
+        );
+
+        const IOSTextArea = ({ value, onChange, placeholder, label }) => (
+            <div className="mb-4">
+                {label && <label className="block text-xs font-bold text-gray-500 uppercase ml-3 mb-1.5 tracking-wide">{label}</label>}
+                <textarea 
+                    value={value} 
+                    onChange={onChange} 
+                    placeholder={placeholder} 
+                    rows="3"
+                    className="w-full bg-white/60 backdrop-blur-md p-4 rounded-2xl text-[17px] text-gray-900 placeholder-gray-400 shadow-sm border border-white/40 focus:ring-2 focus:ring-ios-blue/30 outline-none transition-all resize-none font-sans" 
+                />
+            </div>
+        );
+
+        const IOSSelect = ({ value, onChange, options, label }) => (
+            <div className="mb-4">
+                {label && <label className="block text-xs font-bold text-gray-500 uppercase ml-3 mb-1.5 tracking-wide">{label}</label>}
+                <div className="relative">
+                    <select value={value} onChange={onChange} className="w-full bg-white/60 backdrop-blur-md p-4 pr-10 rounded-2xl text-[17px] text-gray-900 shadow-sm border border-white/40 outline-none appearance-none font-medium">{options.map(opt => <option key={opt}>{opt}</option>)}</select>
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"><Icon path={<path d="M6 9l6 6 6-6"/>} size={16} /></div>
+                </div>
+            </div>
+        );
+
+        const SegmentedControl = ({ options, active, onChange }) => (
+            <div className="glass-panel p-1 rounded-xl flex mb-4">
+                {options.map(opt => <button key={opt} onClick={() => onChange(opt)} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${active === opt ? 'bg-white shadow-sm text-gray-900 scale-[1.02]' : 'text-gray-500 hover:text-gray-700'}`}>{opt}</button>)}
+            </div>
+        );
+
+        const PackageCard = ({ pkg, onCheckIn }) => {
+            const progress = (pkg.used / pkg.total) * 100;
+            const isFull = pkg.used >= pkg.total;
+            return (
+                <div className="glass-panel p-4 rounded-3xl mb-3 border-l-4 border-ios-purple relative overflow-hidden transition-transform active:scale-[0.99]">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 className="font-bold text-gray-900">{pkg.name}</h3>
+                            <p className="text-xs text-gray-500 font-medium">{pkg.treatment} • {pkg.total} Days Plan</p>
+                        </div>
+                        <div className="text-right">
+                             <span className="text-[10px] font-bold text-ios-purple bg-purple-100/50 px-2 py-1 rounded-full border border-purple-100">Day {Math.min(pkg.used + 1, pkg.total)}/{pkg.total}</span>
+                        </div>
+                    </div>
+                    <div className="w-full bg-gray-200/50 rounded-full h-2 mb-3 overflow-hidden">
+                        <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(168,85,247,0.4)]" style={{width: `${progress}%`}}></div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => onCheckIn(pkg)}
+                            disabled={isFull}
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${isFull ? 'bg-gray-100 text-gray-400' : 'bg-ios-purple text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/40 active:scale-95'}`}
+                        >
+                            {isFull ? 'Completed' : <><Icon path={Icons.CheckCircle} size={16} /> Mark Attendance</>}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const RevenueChart = ({ visits }) => {
+            const data = useMemo(() => {
+                const days = [];
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                    const total = visits.filter(v => v.date === dateStr).reduce((sum, v) => sum + (parseFloat(v.fee)||0), 0);
+                    days.push({ day: dayName, value: total });
+                }
+                return days;
+            }, [visits]);
+
+            const max = Math.max(...data.map(d => d.value), 100); 
+
+            return (
+                <div className="glass-panel p-4 rounded-3xl mb-6">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase mb-4 flex items-center gap-2"><Icon path={Icons.Chart} size={14}/> Weekly Revenue</h3>
+                    <div className="flex items-end justify-between h-32 gap-2">
+                        {data.map((d, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+                                <div className="w-full bg-blue-100/50 rounded-t-lg relative h-full overflow-hidden">
+                                    <div 
+                                        className="absolute bottom-0 w-full bg-gradient-to-t from-blue-500 to-indigo-500 rounded-t-lg transition-all duration-1000 ease-out group-hover:bg-indigo-400"
+                                        style={{ height: `${(d.value / max) * 100}%` }}
+                                    ></div>
+                                </div>
+                                <span className="text-[10px] text-gray-400 font-bold">{d.day}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+        };
+
+        // --- VIEWS ---
+
+        const Dashboard = ({ visits, setView, onNewVisit, onCheckIn, lastBackup, onSync }) => {
+            const today = getToday();
+            
+            const backupAlert = useMemo(() => {
+                if (!lastBackup) return "Backup Required!";
+                const diff = (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24);
+                if (diff > 3) return `Backup Overdue (${Math.floor(diff)} days)`;
+                return null;
+            }, [lastBackup]);
+
+            const activePackages = useMemo(() => {
+                const packages = visits.filter(v => v.isPackagePurchase === true);
+                return packages.map(pkg => {
+                    const used = visits.filter(v => v.packageId === pkg.packageId && v.id !== pkg.id).length;
+                    return { ...pkg, used, total: parseInt(pkg.totalSessions || 0) };
+                }).filter(pkg => pkg.used < pkg.total);
+            }, [visits]);
+
+            const todayStats = useMemo(() => {
+                const allToday = visits.filter(v => v.date === today);
+                let income = 0;
+                let cash = 0;
+                let online = 0;
+                let count = 0;
+
+                allToday.forEach(v => {
+                    const fee = parseFloat(v.fee) || 0;
+                    income += fee;
+                    
+                    const isPackage = v.paymentMode.includes('Package Advance');
+                    const mode = v.paymentMode.toLowerCase();
+                    
+                    if (fee > 0) {
+                        if (mode.includes('cash') || (isPackage && mode.includes('cash'))) {
+                            cash += fee;
+                        } else if (mode.includes('upi') || mode.includes('card') || (isPackage && (mode.includes('upi') || mode.includes('card')))) {
+                            online += fee;
+                        } else {
+                            // Default fallback to cash if unspecified but paid
+                            cash += fee; 
+                        }
+                    }
+
+                    // Count logic
+                    if (v.paymentMode !== 'Package Advance') count++; // Regular visit
+                    if (v.paymentMode === 'Package Advance') count++; // New package purchase
+                });
+
+                return { 
+                    income, 
+                    count,
+                    breakdown: {
+                        cash: formatCurrency(cash),
+                        online: formatCurrency(online)
+                    }
+                };
+            }, [visits, today]);
+
+            return (
+                <div className="page-enter pb-24">
+                    <div className="px-6 pt-12 pb-6 flex justify-between items-end bg-gradient-to-b from-white/30 to-transparent backdrop-blur-sm sticky top-0 z-20">
+                        <div>
+                            <div className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-1">Dr. Kiran Madhav T</div>
+                            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-700 tracking-tight">Today</h1>
+                        </div>
+                        <div className="flex gap-2">
+                             <button onClick={onSync} className="w-10 h-10 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center text-gray-600 shadow-md border-2 border-white/50"><Icon path={Icons.Cloud} size={20} /></button>
+                             <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-blue-600 shadow-glass border border-white/50"><Icon path={Icons.UserDoctor} size={24} /></div>
+                        </div>
+                    </div>
+
+                    {backupAlert && (
+                        <div className="mx-5 mb-6 p-2 glass-panel border-l-4 border-l-red-500 rounded-2xl flex items-center gap-4 text-red-600 animate-pulse cursor-pointer hover:bg-white/80 transition-colors" onClick={() => setView('settings')}>
+                            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center shadow-sm"><Icon path={Icons.Download} size={16} /></div>
+                            <div className="flex-1">
+                                <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">System Alert</p>
+                                <p className="text-xs font-bold">{backupAlert}</p>
+                            </div>
+                            <Icon path={Icons.ChevronLeft} className="rotate-180 opacity-50" size={16} />
+                        </div>
+                    )}
+
+                    <div className="px-5 grid grid-cols-2 gap-4 mb-8">
+                        <StatWidget 
+                            icon={Icons.Rupee} 
+                            label="Revenue" 
+                            value={formatCurrency(todayStats.income)} 
+                            color="bg-gradient-to-br from-blue-500 to-indigo-600" 
+                            subtext="Updated just now"
+                            breakdown={todayStats.breakdown} 
+                        />
+                        <StatWidget icon={Icons.Users} label="Patients" value={todayStats.count} color="bg-gradient-to-br from-emerald-400 to-teal-500" subtext="Total visits today" />
+                    </div>
+
+                    {/* Moved New Consultation Box Here */}
+                    <div className="px-5 mb-8">
+                        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group cursor-pointer transition-transform active:scale-[0.98]">
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="relative z-10">
+                                <h3 className="font-bold text-xl mb-1">New Consultation</h3>
+                                <p className="text-white/90 text-sm mb-5 font-medium">Register a new patient or package.</p>
+                                <button onClick={() => onNewVisit({})} className="bg-white/25 backdrop-blur-md border border-white/40 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/35 transition-colors flex items-center gap-2 shadow-lg">
+                                    <Icon path={Icons.Plus} size={18} /> Start Now
+                                </button>
+                            </div>
+                            <div className="absolute -right-6 -bottom-6 opacity-20 transform rotate-12 scale-125 transition-transform group-hover:scale-150 duration-700"><Icon path={Icons.Users} size={160} fill="currentColor" /></div>
+                        </div>
+                    </div>
+
+                    {/* Moved Weekly Chart Here */}
+                    <div className="px-5 mb-8">
+                         <RevenueChart visits={visits} />
+                    </div>
+
+                    {activePackages.length > 0 && (
+                        <div className="px-5 mb-8">
+                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800"><div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600"><Icon path={Icons.Package} size={18}/></div> Active Packages</h2>
+                            {activePackages.map(pkg => (
+                                <PackageCard key={pkg.id} pkg={pkg} onCheckIn={onCheckIn} />
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="px-5">
+                        <div className="flex justify-between items-center mb-4 px-1">
+                            <h2 className="text-lg font-bold text-gray-800">Recent Activity</h2>
+                            <button onClick={() => setView('visits')} className="text-ios-blue text-sm font-bold bg-blue-50 px-3 py-1 rounded-full">See All</button>
+                        </div>
+                        <div className="glass-panel rounded-3xl overflow-hidden">
+                            {visits.slice(0, 5).map((v, i) => (
+                                <div key={v.id} className={`p-4 flex justify-between items-center ${i !== 4 ? 'border-b border-gray-200/50' : ''} hover:bg-white/40 transition-colors`}>
+                                    <div className="flex gap-4 items-center">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-md ${['bg-gradient-to-br from-blue-400 to-blue-600', 'bg-gradient-to-br from-purple-400 to-purple-600', 'bg-gradient-to-br from-orange-400 to-orange-600', 'bg-gradient-to-br from-emerald-400 to-emerald-600'][v.name.length % 4]}`}>{v.name.charAt(0)}</div>
+                                        <div>
+                                            <div className="font-bold text-gray-900">{v.name}</div>
+                                            <div className="text-xs font-medium text-gray-500">{v.treatment} • {v.paymentMode.includes('Package Visit') ? 'Pkg Check-in' : v.paymentMode}</div>
+                                        </div>
+                                    </div>
+                                    <div className="font-bold text-gray-900 text-right">{v.fee == 0 ? <span className="text-green-500 text-xl">FOC</span> : formatCurrency(v.fee)}</div>
+                                </div>
+                            ))}
+                            {visits.length === 0 && <div className="p-8 text-center text-gray-400 text-sm font-medium">No visits recorded yet.</div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const VisitsList = ({ visits, onEdit, onDelete, onRepeat, onAssess }) => {
+            const [search, setSearch] = useState('');
+            const filtered = useMemo(() => {
+                const s = search.toLowerCase();
+                const list = visits.filter(v => 
+                    (v.name && v.name.toLowerCase().includes(s)) || 
+                    (v.phone && v.phone.toLowerCase().includes(s)) || 
+                    (v.address && v.address.toLowerCase().includes(s)) ||
+                    (v.patientId && v.patientId.toLowerCase().includes(s))
+                );
+                // Strict Sort by Date (Newest First)
+                return list.sort((a,b) => b.date.localeCompare(a.date));
+            }, [visits, search]);
+            
+            const openWhatsApp = (phone, name) => {
+                const text = `Hello ${name}, this is from Dr. Kiran Madhav (DM Neuro Clinic). Regarding your consultation...`;
+                window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(text)}`, '_blank');
+            };
+
+            return (
+                <div className="page-enter pb-24 min-h-screen">
+                    <div className="glass-header sticky top-0 z-30 px-4 pt-safe pb-4 bg-white/95 backdrop-blur-xl">
+                        <div className="flex justify-between items-center mb-3 pt-2">
+                             <h1 className="text-3xl font-extrabold px-2 text-gray-900">Patients</h1>
+                             <span className="bg-ios-blue text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">{visits.length} Total</span>
+                        </div>
+                        <div className="relative">
+                            <div className="absolute left-4 top-3.5 text-gray-400"><Icon path={Icons.Search} size={18} /></div>
+                            <input type="text" placeholder="Search by name, phone, or address..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-gray-100/80 backdrop-blur-md pl-12 pr-10 py-3 rounded-2xl text-sm font-medium placeholder-gray-500 outline-none focus:ring-2 focus:ring-ios-blue/30 shadow-sm border border-gray-200 transition-all" />
+                            {search && (
+                                <button onClick={() => setSearch('')} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                                    <Icon path={Icons.XCircle} size={20} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    {/* Added mt-2 to ensure visibility of first item */}
+                    <div className="px-4 mt-2 space-y-3 pb-24">
+                        <div className="glass-panel rounded-3xl overflow-hidden">
+                            {filtered.map((v, i) => (
+                                <div key={v.id} onClick={() => onEdit(v)} className={`p-4 flex items-center justify-between active:bg-white/50 transition-colors cursor-pointer ${i !== filtered.length - 1 ? 'border-b border-gray-200/50' : ''}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold border border-white shadow-sm">{v.name.charAt(0)}</div>
+                                        <div>
+                                            <div className="font-bold text-[15px] text-gray-900">{v.name}</div>
+                                            <div className="text-xs font-medium text-gray-500">
+                                                {v.patientId && <span className="font-mono text-blue-500 mr-1">{v.patientId} •</span>}
+                                                {v.date} • {v.treatment}
+                                            </div>
+                                            {v.referralSource && <div className="text-[10px] text-ios-blue font-bold bg-blue-50/50 px-1.5 py-0.5 rounded inline-block mt-0.5">{v.referralSource === 'Dr. Venkat Reddy' ? 'Ref: Dr. Venkat' : 'Walk-in'}</div>}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 items-center">
+                                        <button onClick={(e) => { e.stopPropagation(); onAssess(v); }} className="text-white p-2 bg-orange-500 rounded-full shadow-lg shadow-orange-500/30 active:scale-90 transition-transform"><Icon path={Icons.Activity} size={16} /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); onRepeat(v); }} className="text-white p-2 bg-blue-500 rounded-full shadow-lg shadow-blue-500/30 active:scale-90 transition-transform"><Icon path={Icons.Repeat} size={16} /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); openWhatsApp(v.phone, v.name); }} className="text-white p-2 bg-green-500 rounded-full shadow-lg shadow-green-500/30 active:scale-90 transition-transform"><Icon path={Icons.WhatsApp} size={16} fill="currentColor" /></button>
+                                        <Icon path={<path d="M9 18l6-6-6-6"/>} size={16} className="text-gray-300 self-center" />
+                                    </div>
+                                </div>
+                            ))}
+                            {filtered.length === 0 && <div className="p-12 text-center text-gray-400 font-medium">No matching patients found.</div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ReportsView = ({ visits, expenses, onAddExpense, onDeleteExpense }) => {
+            const [tab, setTab] = useState('Overview');
+            const [period, setPeriod] = useState('Monthly');
+            const [showExpModal, setShowExpModal] = useState(false);
+            const [showShareModal, setShowShareModal] = useState(false);
+            const [newExp, setNewExp] = useState({ description: '', amount: '', category: 'Rent', date: getToday() });
+            const [shareConfig, setShareConfig] = useState({ period: 'Today', phone: SafeStorage.getItem('dm_share_phone') || '' });
+
+            const reportData = useMemo(() => {
+                const groups = {};
+                const getKey = (d) => getReportKey(d, period);
+                visits.forEach(v => { const k = getKey(v.date); if (!groups[k]) groups[k] = { label: k, income: 0, expense: 0 }; groups[k].income += parseFloat(v.fee) || 0; });
+                expenses.forEach(e => { const k = getKey(e.date); if (!groups[k]) groups[k] = { label: k, income: 0, expense: 0 }; groups[k].expense += parseFloat(e.amount) || 0; });
+                return Object.values(groups).sort((a, b) => b.label.localeCompare(a.label));
+            }, [visits, expenses, period]);
+
+            const saveExpense = () => { if(newExp.description && newExp.amount) { onAddExpense(newExp); setShowExpModal(false); setNewExp({ description: '', amount: '', category: 'Rent', date: getToday() }); } };
+
+            const handleShare = (action) => {
+                SafeStorage.setItem('dm_share_phone', shareConfig.phone);
+                const today = getToday();
+                let filteredVisits = [];
+                let filteredExpenses = [];
+                let title = "";
+
+                if (shareConfig.period === 'Today') {
+                    filteredVisits = visits.filter(v => v.date === today);
+                    filteredExpenses = expenses.filter(e => e.date === today);
+                    title = `Daily Report (${formatDate(today)})`;
+                } else if (shareConfig.period === 'This Month') {
+                    const monthStr = today.slice(0, 7);
+                    filteredVisits = visits.filter(v => v.date.startsWith(monthStr));
+                    filteredExpenses = expenses.filter(e => e.date.startsWith(monthStr));
+                    title = `Monthly Report (${monthStr})`;
+                } else if (shareConfig.period === 'This Week') {
+                    const d = new Date();
+                    const day = d.getDay();
+                    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                    const monday = new Date(d.setDate(diff)).toISOString().split('T')[0];
+                    filteredVisits = visits.filter(v => v.date >= monday && v.date <= today);
+                    filteredExpenses = expenses.filter(e => e.date >= monday && e.date <= today);
+                    title = `Weekly Report (Since ${formatDate(monday)})`;
+                }
+
+                filteredVisits.sort((a,b) => (a.date + (a.time||'')).localeCompare(b.date + (b.time||'')));
+                const totalInc = filteredVisits.reduce((sum, v) => sum + (Number(v.fee)||0), 0);
+                const totalExp = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+
+                // Payment Breakdown for Report
+                let cashTotal = 0;
+                let onlineTotal = 0;
+                let walkInCount = 0;
+                let referralCount = 0;
+                let referralRevenue = 0;
+                let walkInRevenue = 0;
+
+                filteredVisits.forEach(v => {
+                    const fee = parseFloat(v.fee) || 0;
+                    // Payment Mode Stats
+                    if(fee > 0) {
+                        const mode = v.paymentMode.toLowerCase();
+                        if (mode.includes('cash')) cashTotal += fee;
+                        else if (mode.includes('upi') || mode.includes('card')) onlineTotal += fee;
+                        else cashTotal += fee;
+                    }
+
+                    // Referral Stats
+                    if (v.referralSource === 'Dr. Venkat Reddy') {
+                        referralCount++;
+                        referralRevenue += fee;
+                    } else {
+                        walkInCount++;
+                        walkInRevenue += fee;
+                    }
+                });
+
+                if (action === 'print') {
+                    const printWindow = window.open('', '', 'height=600,width=800');
+                    printWindow.document.write('<html><head><title>Report</title>');
+                    printWindow.document.write('<style>body{font-family: sans-serif; padding: 20px;} table{width: 100%; border-collapse: collapse; margin-top: 20px;} th, td{border: 1px solid #ddd; padding: 8px; text-align: left;} th{background-color: #f2f2f2;} .amount{text-align: right;} .header{text-align: center; margin-bottom: 20px;} .summary{margin-top: 20px; text-align: right; font-weight: bold;} .breakdown{font-size: 0.9em; margin-top: 5px; color: #555; text-align: right;}</style>');
+                    printWindow.document.write('</head><body>');
+                    printWindow.document.write(`<div class="header"><h2>${title}</h2><h3>Dr. Kiran Madhav T (PT, COMT, MIAP) - DM Neuro</h3></div>`);
+                    printWindow.document.write(`<div class="summary">Net Income: ${formatCurrency(totalInc - totalExp)} <br> (Income: ${formatCurrency(totalInc)} - Expense: ${formatCurrency(totalExp)})</div>`);
+                    printWindow.document.write(`<div class="breakdown">Cash: ${formatCurrency(cashTotal)} | Online: ${formatCurrency(onlineTotal)}</div>`);
+                    printWindow.document.write(`<div class="breakdown">Referrals (Dr. Venkat): ${referralCount} (${formatCurrency(referralRevenue)}) | Walk-ins: ${walkInCount} (${formatCurrency(walkInRevenue)})</div>`);
+                    
+                    if(filteredExpenses.length > 0) {
+                        printWindow.document.write('<h4>Expenses</h4><table><thead><tr><th>Category</th><th>Description</th><th>Date</th><th class="amount">Amount</th></tr></thead><tbody>');
+                        filteredExpenses.forEach(e => {
+                            printWindow.document.write(`<tr><td>${e.category || 'General'}</td><td>${e.description}</td><td>${e.date}</td><td class="amount">${e.amount}</td></tr>`);
+                        });
+                        printWindow.document.write('</tbody></table>');
+                    }
+
+                    printWindow.document.write('<h4>Patients</h4><table><thead><tr><th>#</th><th>Name</th><th>Treatment</th><th>Mode</th><th class="amount">Fee</th></tr></thead><tbody>');
+                    filteredVisits.forEach((v, i) => {
+                        const feeDisplay = v.fee == 0 ? (v.paymentMode.includes('Package') ? 'Pkg' : 'FOC') : v.fee;
+                        const manualTherapyMatch = v.treatment.match(/Dry Needling|Kinesio Taping/g);
+                        const manualTherapyStr = manualTherapyMatch ? ` (+${manualTherapyMatch.length} Extras)` : '';
+                        printWindow.document.write(`<tr><td>${i+1}</td><td>${v.name}</td><td>${v.treatment}${manualTherapyStr}</td><td>${v.paymentMode}</td><td class="amount">${feeDisplay}</td></tr>`);
+                    });
+                    printWindow.document.write('</tbody></table></body></html>');
+                    printWindow.document.close();
+                    printWindow.print();
+                    return;
+                }
+
+                let text = `*${title}*\n*Dr. Kiran Madhav T (PT, COMT, MIAP)*\n\n*PATIENTS (${filteredVisits.length})*\n`;
+                filteredVisits.forEach((v, i) => {
+                    const feeDisplay = v.fee == 0 ? (v.paymentMode.includes('Package') ? 'Pkg' : 'FOC') : v.fee;
+                    text += `${i+1}. ${v.name} (${v.treatment}) - ${feeDisplay}\n`;
+                });
+
+                if (filteredExpenses.length > 0) {
+                    text += `\n*EXPENSES*\n`;
+                    filteredExpenses.forEach(e => text += `- ${e.description}: ${e.amount}\n`);
+                }
+
+                text += `\n*SUMMARY*\nIncome: ₹${totalInc}\nExpense: ₹${totalExp}\n*NET: ₹${totalInc - totalExp}*`;
+                text += `\n\n*COLLECTIONS*\n💵 Cash: ₹${cashTotal}\n💳 Online: ₹${onlineTotal}`;
+                text += `\n\n*REFERRALS*\n👨‍⚕️ Dr. Venkat: ${referralCount} (${formatCurrency(referralRevenue)})\n🚶 Walk-in: ${walkInCount} (${formatCurrency(walkInRevenue)})`;
+
+                if (action === 'copy') {
+                    navigator.clipboard.writeText(text).then(() => alert("Report copied to clipboard!"));
+                } else {
+                    const url = `https://wa.me/${shareConfig.phone}?text=${encodeURIComponent(text)}`;
+                    window.open(url, '_blank');
+                }
+                setShowShareModal(false);
+            };
+
+            return (
+                <div className="page-enter pb-24 min-h-screen">
+                    <div className="glass-header sticky top-0 z-20 px-4 pt-safe pb-3">
+                        <div className="flex justify-between items-center mb-3 pt-2">
+                            <h1 className="text-3xl font-extrabold px-2 text-gray-900">Reports</h1>
+                            <div className="flex gap-3">
+                                <button onClick={() => setShowShareModal(true)} className="text-white bg-ios-green p-2 rounded-full shadow-lg shadow-green-500/30 active:scale-95 transition-transform"><Icon path={Icons.Share} size={20}/></button>
+                                <button onClick={() => setShowExpModal(true)} className="text-white bg-ios-blue p-2 rounded-full shadow-lg shadow-blue-500/30 active:scale-95 transition-transform"><Icon path={Icons.Plus} size={24}/></button>
+                            </div>
+                        </div>
+                        <SegmentedControl options={['Overview', 'Expenses']} active={tab} onChange={setTab} />
+                    </div>
+                    
+                    {tab === 'Overview' && (<div className="px-4 mt-4 space-y-4"><SegmentedControl options={['Daily', 'Monthly', 'Yearly']} active={period} onChange={setPeriod} /><div className="glass-panel p-5 rounded-3xl"><h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6">Performance Trend</h3><div className="flex items-end justify-between h-32 gap-3">{reportData.slice(0, 7).reverse().map((d, i) => { const max = Math.max(...reportData.map(r => Math.max(r.income, r.expense)), 100); return (<div key={i} className="flex-1 flex flex-col items-center gap-2 group"><div className="w-full flex justify-center items-end gap-1 h-full"><div className="w-3 bg-blue-500 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity" style={{height: `${(d.income/max)*100}%`}}></div><div className="w-3 bg-red-400 rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity" style={{height: `${(d.expense/max)*100}%`}}></div></div><div className="text-[10px] font-bold text-gray-400 w-full text-center">{d.label.split('-').pop()}</div></div>) })}{reportData.length === 0 && <div className="text-center w-full text-gray-400 text-xs font-medium">No Data Available</div>}</div></div><div className="glass-panel rounded-3xl overflow-hidden"><div className="p-4 bg-gray-50/50 border-b border-gray-200/50 flex text-xs font-bold text-gray-400 uppercase tracking-wider"><div className="flex-1">Period</div><div className="w-20 text-right">Income</div><div className="w-20 text-right">Net</div></div>{reportData.map((row, i) => (<div key={i} className="p-4 border-b border-gray-200/50 flex items-center text-sm"><div className="flex-1 font-bold text-gray-800">{row.label}</div><div className="w-20 text-right text-gray-600 font-medium">{formatCurrency(row.income)}</div><div className={`w-20 text-right font-bold ${row.income - row.expense >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatCurrency(row.income - row.expense)}</div></div>))}</div></div>)}
+                    {tab === 'Expenses' && (<div className="px-4 mt-4"><div className="glass-panel rounded-3xl overflow-hidden">{expenses.map((e, i) => (<div key={e.id} className="p-4 flex justify-between items-center border-b border-gray-200/50 last:border-0 hover:bg-white/40"><div><div className="font-bold text-gray-900">{e.description}</div><div className="text-xs font-medium text-gray-500">{e.date} • {e.category}</div></div><div className="text-right"><div className="font-bold text-red-500">-{formatCurrency(e.amount)}</div><button onClick={() => onDeleteExpense(e.id)} className="text-[10px] text-gray-400 font-bold hover:text-red-500 transition-colors mt-1">DELETE</button></div></div>))}{expenses.length === 0 && <div className="p-12 text-center text-gray-400 font-medium">No expenses logged.</div>}</div></div>)}
+                    
+                    {showExpModal && (<div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter"><div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowExpModal(false)}></div><div className="relative w-full md:max-w-lg mx-auto my-auto z-10 bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/50"><h3 className="text-xl font-bold mb-6 text-gray-900">Log Expense</h3>
+                    <IOSSelect label="Category" options={['Rent', 'Salary', 'Equipment', 'Consumables', 'Marketing', 'Utilities', 'Other']} value={newExp.category} onChange={e => setNewExp({...newExp, category: e.target.value})} />
+                    <IOSInput label="Description" value={newExp.description} onChange={e => setNewExp({...newExp, description: e.target.value})} placeholder="e.g. November Rent" /><IOSInput label="Amount" type="number" value={newExp.amount} onChange={e => setNewExp({...newExp, amount: e.target.value})} placeholder="0.00" /><IOSInput label="Date" type="date" value={newExp.date} onChange={e => setNewExp({...newExp, date: e.target.value})} /><div className="flex gap-3 mt-8"><button onClick={() => setShowExpModal(false)} className="flex-1 py-3.5 text-gray-600 font-bold bg-gray-200/50 rounded-2xl hover:bg-gray-200 transition-colors">Cancel</button><button onClick={saveExpense} className="flex-1 py-3.5 text-white font-bold bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform">Save</button></div></div></div>)}
+
+                    {showShareModal && (
+                        <div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter">
+                            <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setShowShareModal(false)}></div>
+                            <div className="relative w-full md:max-w-lg mx-auto my-auto z-10 bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/50">
+                                <h3 className="text-xl font-bold mb-6 text-gray-900">Share Report</h3>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Select Period</label>
+                                <div className="flex bg-gray-100/50 rounded-xl p-1 mb-5">
+                                    {['Today', 'This Week', 'This Month'].map(p => (
+                                        <button key={p} onClick={() => setShareConfig({...shareConfig, period: p})} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${shareConfig.period === p ? 'bg-white shadow text-black' : 'text-gray-500'}`}>{p}</button>
+                                    ))}
+                                </div>
+                                <IOSInput label="Target WhatsApp Number" value={shareConfig.phone} onChange={e => setShareConfig({...shareConfig, phone: e.target.value})} placeholder="e.g. 919876543210" type="tel" />
+                                <div className="flex gap-3 mt-8">
+                                    <button onClick={() => setShowShareModal(false)} className="flex-1 py-3.5 text-gray-600 font-bold bg-gray-200/50 rounded-2xl hover:bg-gray-200 transition-colors">Cancel</button>
+                                    <div className="flex-1 flex gap-2">
+                                        <button onClick={() => handleShare('copy')} className="flex-1 py-3.5 text-white font-bold bg-gray-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center"><Icon path={Icons.Copy} size={18} /></button>
+                                        <button onClick={() => handleShare('print')} className="flex-1 py-3.5 text-white font-bold bg-blue-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center"><Icon path={Icons.Printer} size={18} /></button>
+                                        <button onClick={() => handleShare('whatsapp')} className="flex-1 py-3.5 text-white font-bold bg-green-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center"><Icon path={Icons.Message} size={18} /></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const SettingsView = ({ onBackup, onRestore, onReset, onExportCSV, setPin, onBack, currentPin, onSetSyncUrl, onSetAssessmentUrl }) => {
+            const fileRef = useRef();
+            const [newPin, setNewPin] = useState('');
+            const [syncUrlInput, setSyncUrlInput] = useState(SafeStorage.getItem('dm_sync_url') || '');
+            const [assessmentUrlInput, setAssessmentUrlInput] = useState(SafeStorage.getItem('dm_assessment_url') || './assessment.html');
+
+            const handleFile = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { try { const data = JSON.parse(ev.target.result); if(confirm('Restore data?')) onRestore(data); } catch { alert("Invalid File"); } }; reader.readAsText(file); };
+            const savePin = () => { if (newPin.length === 4) { setPin(newPin); alert("PIN Updated"); setNewPin(''); } else alert("PIN must be 4 digits"); };
+            const handleFactoryReset = () => {
+                const userPin = prompt("Enter PIN to confirm Factory Reset:");
+                if (userPin === currentPin) {
+                    const confirmText = prompt("Type 'DELETE' to confirm full reset:");
+                    if (confirmText === 'DELETE') {
+                         onReset();
+                    } else {
+                         alert("Reset Cancelled.");
+                    }
+                } else {
+                    alert("Incorrect PIN. Reset cancelled.");
+                }
+            };
+            
+            const saveSyncUrl = () => {
+                onSetSyncUrl(syncUrlInput);
+                alert("Cloud Sync URL Saved!");
+            }
+
+            const saveAssessmentUrl = () => {
+                onSetAssessmentUrl(assessmentUrlInput);
+                alert("Assessment Tool URL Saved!");
+            }
+
+            return (
+                <div className="page-enter pb-24 min-h-screen">
+                    <div className="glass-header sticky top-0 z-20 px-4 pt-safe pb-4 flex items-center gap-2">
+                        <button onClick={onBack} className="text-gray-500 active:scale-90 transition-transform"><Icon path={Icons.ChevronLeft} size={28}/></button>
+                        <h1 className="text-3xl font-extrabold text-gray-900">Settings</h1>
+                    </div>
+                    <div className="px-4 mt-6 space-y-6">
+                        
+                        {/* CLOUD SYNC SECTION */}
+                         <div>
+                            <div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Cloud & Integration</div>
+                            <div className="glass-panel rounded-3xl p-4 space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Google Apps Script URL (For Sync)</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" placeholder="https://script.google.com/..." value={syncUrlInput} onChange={e => setSyncUrlInput(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none text-xs font-mono" />
+                                        <button onClick={saveSyncUrl} className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold text-xs">Save</button>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-2">Deploy a Web App in Google Apps Script to handle 'doPost' and 'doGet' for sync.</p>
+                                </div>
+                                <div className="border-t border-gray-200/50 pt-4">
+                                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Assessment Tool URL</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" placeholder="./assessment.html" value={assessmentUrlInput} onChange={e => setAssessmentUrlInput(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none text-xs font-mono" />
+                                        <button onClick={saveAssessmentUrl} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-xs">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Data Management</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={onBackup} className="w-full p-4 flex items-center gap-4 border-b border-gray-200/50 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><Icon path={Icons.Download} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Backup Data (JSON)</span></button><button onClick={() => fileRef.current.click()} className="w-full p-4 flex items-center gap-4 border-b border-gray-200/50 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-green-100 text-green-600 flex items-center justify-center"><Icon path={Icons.Upload} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Restore Data</span><input type="file" ref={fileRef} onChange={handleFile} className="hidden" accept=".json"/></button><button onClick={onExportCSV} className="w-full p-4 flex items-center gap-4 active:bg-white/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><Icon path={Icons.FileText} size={18}/></div><span className="font-bold text-[16px] text-gray-800">Export to Excel (CSV)</span></button></div></div>
+                        <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Security</div><div className="glass-panel rounded-3xl p-4 flex gap-3"><input type="number" placeholder="New PIN" value={newPin} onChange={e => setNewPin(e.target.value)} className="bg-white/50 rounded-xl px-4 py-3 flex-1 outline-none font-bold text-center tracking-widest placeholder-gray-400" /><button onClick={savePin} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-black/20 active:scale-95 transition-transform">Set PIN</button></div></div>
+                        <div><div className="text-xs font-bold text-gray-500 uppercase ml-3 mb-2 tracking-wide">Danger Zone</div><div className="glass-panel rounded-3xl overflow-hidden"><button onClick={handleFactoryReset} className="w-full p-4 flex items-center gap-4 text-red-600 active:bg-red-50/50 text-left transition-colors"><div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center"><Icon path={Icons.Trash} size={18}/></div><span className="font-bold text-[16px]">Factory Reset</span></button></div></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EntryForm = ({ initialData, onSave, onCancel, onDelete, onReceipt, visits }) => {
+            const TREATMENT_OPTIONS = ['CS', 'LBA', 'PA Shoulder', 'OA of Knee', 'Tennis Elbow', 'Stroke', 'Others'];
+            
+            // Define DEFAULT form state structure
+            const defaultFormState = { 
+                name: '', 
+                age: '',
+                sex: 'Male',
+                phone: '', 
+                address: '', 
+                fee: '', 
+                paymentMode: 'Cash', 
+                totalSessions: '', 
+                date: getToday(), 
+                notes: '', 
+                id: null, 
+                referralSource: 'Walk-in' 
+            };
+
+            const getInitialTreatmentState = () => {
+                const data = initialData || {};
+                const savedString = data.treatment || '';
+                const savedArray = savedString.split(', ').filter(Boolean);
+                const selection = savedArray.filter(t => TREATMENT_OPTIONS.includes(t));
+                const custom = savedArray.find(t => !TREATMENT_OPTIONS.includes(t) && !['Dry Needling', 'Kinesio Taping'].includes(t)) || '';
+                if (custom && !selection.includes('Others')) selection.push('Others');
+                return { selection, custom };
+            };
+            
+            // Reconstruct Manual Therapy State from saved data
+            const getInitialManualState = () => {
+                const data = initialData || {};
+                const savedString = data.treatment || '';
+                const dry = savedString.includes("Dry Needling");
+                const kinesio = savedString.includes("Kinesio Taping");
+                // Note: We don't have saved prices, so we leave them empty for new entry, but user can see checkmark
+                return {
+                    dryNeedling: { selected: dry, price: '' },
+                    kinesio: { selected: kinesio, price: '' },
+                    others: { selected: false, name: '', price: '' }
+                };
+            };
+
+            const getInitialPkgMode = () => { 
+                if (initialData && initialData.paymentMode && initialData.paymentMode.includes('Package Advance')) { 
+                    const match = initialData.paymentMode.match(/\(([^)]+)\)/); 
+                    return match ? match[1] : 'Cash'; 
+                } 
+                return 'Cash'; 
+            };
+            
+            const treatmentState = getInitialTreatmentState();
+            const manualState = getInitialManualState();
+
+            // Use spread to ensure defaults are always present even if initialData is partial
+            const [form, setForm] = useState({ ...defaultFormState, ...initialData });
+            
+            const [selectedTreatments, setSelectedTreatments] = useState(treatmentState.selection);
+            const [customTreatment, setCustomTreatment] = useState(treatmentState.custom);
+            const [pkgMode, setPkgMode] = useState(getInitialPkgMode());
+            const [manualTherapy, setManualTherapy] = useState(manualState);
+            const [pastVisits, setPastVisits] = useState([]);
+            
+            // NEW: Add patientId to state, generate ONLY if it's a completely new entry (no ID passed)
+            // AND ensure it persists if passed in initialData.
+            useEffect(() => {
+                if (!form.patientId && !form.id) {
+                     setForm(prev => ({ ...prev, patientId: generatePatientId() }));
+                }
+            }, []); // Run once on mount
+
+            // Calculate past visits on mount or phone change
+            useEffect(() => {
+                if (form.phone && visits) {
+                    const history = visits.filter(v => 
+                        v.phone === form.phone && 
+                        v.id !== form.id // Don't show current edit record
+                    ).sort((a,b) => b.date.localeCompare(a.date));
+                    setPastVisits(history.slice(0, 3)); // Top 3
+                    
+                    // SMART AUTO-FILL: If found existing patient, and we are in NEW mode (no ID), fill details
+                    if (history.length > 0 && !form.id) {
+                         const latest = history[0];
+                         setForm(prev => ({
+                             ...prev,
+                             name: latest.name,
+                             age: latest.age || prev.age,
+                             sex: latest.sex || prev.sex,
+                             address: latest.address || prev.address,
+                             patientId: latest.patientId || prev.patientId // Use existing ID if available
+                         }));
+                    }
+                }
+            }, [form.phone, visits, form.id]);
+            
+            // Patient Loyalty Stats
+            const patientStats = useMemo(() => {
+                if (form.phone && visits) {
+                     const history = visits.filter(v => v.phone === form.phone);
+                     const totalSpent = history.reduce((sum, v) => sum + (parseFloat(v.fee) || 0), 0);
+                     return { visits: history.length, spent: totalSpent };
+                }
+                return null;
+            }, [form.phone, visits]);
+
+
+            const handlePaymentChange = (val) => {
+                let updates = { paymentMode: val };
+                if (val === 'FOC') updates.fee = '0';
+                else if (form.paymentMode === 'FOC') updates.fee = ''; // Reset if switching away from FOC
+                setForm(prev => ({ ...prev, ...updates }));
+            };
+
+            const toggleTreatment = (t) => {
+                if (selectedTreatments.includes(t)) {
+                    setSelectedTreatments(prev => prev.filter(i => i !== t));
+                } else {
+                    setSelectedTreatments(prev => [...prev, t]);
+                }
+            };
+            
+            const toggleManual = (key) => {
+                setManualTherapy(prev => ({
+                    ...prev,
+                    [key]: { ...prev[key], selected: !prev[key].selected }
+                }));
+            };
+
+            const updateManualPrice = (key, val) => {
+                setManualTherapy(prev => ({
+                    ...prev,
+                    [key]: { ...prev[key], price: val }
+                }));
+            };
+            
+            const updateManualName = (val) => {
+                setManualTherapy(prev => ({
+                    ...prev,
+                    others: { ...prev.others, name: val }
+                }));
+            };
+
+            // Calculate total fee live
+            const calculatedTotal = useMemo(() => {
+                let base = parseFloat(form.fee) || 0;
+                if (manualTherapy.dryNeedling.selected) base += parseFloat(manualTherapy.dryNeedling.price) || 0;
+                if (manualTherapy.kinesio.selected) base += parseFloat(manualTherapy.kinesio.price) || 0;
+                if (manualTherapy.others.selected) base += parseFloat(manualTherapy.others.price) || 0;
+                return base;
+            }, [form.fee, manualTherapy]);
+
+            const handleSubmit = () => { 
+                if (!form.name || form.fee === '') return alert("Name and Fee required"); 
+                
+                let finalTreatments = selectedTreatments.filter(t => t !== 'Others');
+                if (selectedTreatments.includes('Others')) {
+                    if (customTreatment.trim()) finalTreatments.push(customTreatment.trim());
+                    else return alert("Please specify the condition for 'Others'.");
+                }
+                
+                // Add manual therapies to treatment string
+                if (manualTherapy.dryNeedling.selected && !finalTreatments.includes("Dry Needling")) finalTreatments.push("Dry Needling");
+                if (manualTherapy.kinesio.selected && !finalTreatments.includes("Kinesio Taping")) finalTreatments.push("Kinesio Taping");
+                if (manualTherapy.others.selected) {
+                    if (manualTherapy.others.name.trim()) finalTreatments.push(manualTherapy.others.name.trim());
+                    else return alert("Please specify the Manual Therapy name.");
+                }
+
+                const finalTreatmentString = finalTreatments.join(', ');
+                if (!finalTreatmentString) return alert("Please select at least one condition or treatment.");
+
+                const isPackage = form.paymentMode === 'Package Advance';
+                let finalPaymentMode = form.paymentMode;
+                if (isPackage) finalPaymentMode = `Package Advance (${pkgMode})`;
+                
+                const finalData = { 
+                    ...form, 
+                    fee: calculatedTotal.toString(), 
+                    treatment: finalTreatmentString,
+                    paymentMode: finalPaymentMode, 
+                    isPackagePurchase: isPackage, 
+                    packageId: isPackage ? (form.packageId || generateId()) : null, 
+                    totalSessions: isPackage ? (form.totalSessions || 10) : null 
+                };
+                onSave(finalData); 
+            };
+
+            const handleGenerateReceipt = () => {
+                // Gather full treatment string for receipt to ensure MANUAL therapies are included even if not saved yet
+                let receiptTreatments = selectedTreatments.filter(t => t !== 'Others');
+                if (selectedTreatments.includes('Others')) receiptTreatments.push(customTreatment);
+                if (manualTherapy.dryNeedling.selected) receiptTreatments.push("Dry Needling");
+                if (manualTherapy.kinesio.selected) receiptTreatments.push("Kinesio Taping");
+                if (manualTherapy.others.selected) receiptTreatments.push(manualTherapy.others.name);
+
+                const text = `🧾 *Payment Receipt*\n*DM Neuro Physiotherapy and Rehabilitation Centre*\nKompally, Hyderabad - 500014\n\n*Dr. Kiran Madhav T*\nPT, COMT, MIAP\n\nPatient: ${form.name} (${form.age || ''} ${form.sex ? '/ ' + form.sex : ''})\nID: ${form.patientId}\nDate: ${formatDate(form.date)}\nTreatment: ${receiptTreatments.join(', ')}\nAmount: ${formatCurrency(calculatedTotal)} (${form.paymentMode})\n\nReceived with thanks.`;
+                const url = `https://wa.me/91${form.phone}?text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            };
+
+            return (
+                <div className="fixed inset-0 w-full h-full z-50 flex flex-col bg-white/0 modal-enter">
+                    {/* Dark Backdrop for Modal Effect on iPad/Desktop */}
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel}></div>
+                    
+                    {/* The Card/Sheet Content */}
+                    <div className="relative w-full md:max-w-2xl h-full md:h-[90vh] bg-white md:rounded-3xl flex flex-col overflow-hidden shadow-2xl mx-auto my-0 md:my-auto z-10 animate-slide-up">
+                        
+                        {/* Header */}
+                        <div className="glass-header sticky top-0 px-4 py-4 flex justify-center items-center z-20 border-b border-white/40 bg-white/80 backdrop-blur-md">
+                            <span className="font-extrabold text-lg text-gray-800 tracking-tight">{form.id ? 'Edit Consultation' : 'New Consultation'}</span>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-24 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+                            
+                            {/* NEW: Patient ID Banner */}
+                            <div className="bg-blue-50/50 p-3 rounded-2xl flex justify-between items-center border border-blue-100">
+                                <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">Patient ID</span>
+                                <span className="font-mono font-bold text-gray-700 text-sm tracking-wider">{form.patientId}</span>
+                            </div>
+
+                            <div className="glass-panel rounded-3xl p-2">
+                                <IOSInput label="Patient Name" placeholder="Enter Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                                <div className="h-[1px] bg-gray-200/50 mx-4"></div>
+                                
+                                {/* NEW ROW FOR AGE AND SEX */}
+                                <div className="flex flex-row">
+                                    <div className="flex-1 border-r border-gray-200/50">
+                                        <IOSInput label="Age" placeholder="Yrs" type="number" value={form.age} onChange={e => setForm({...form, age: e.target.value})} />
+                                    </div>
+                                    <div className="flex-1 pl-4">
+                                         <IOSSelect label="Sex" options={['Male', 'Female', 'Other']} value={form.sex} onChange={e => setForm({...form, sex: e.target.value})} />
+                                    </div>
+                                </div>
+                                <div className="h-[1px] bg-gray-200/50 mx-4"></div>
+                                {/* END NEW ROW */}
+
+                                <IOSInput label="Phone Number" placeholder="Mobile" type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                                <div className="h-[1px] bg-gray-200/50 mx-4"></div>
+                                <IOSInput label="Address" placeholder="Location/City" value={form.address || ''} onChange={e => setForm({...form, address: e.target.value})} />
+                            </div>
+
+                            {/* Patient Loyalty Stats */}
+                            {patientStats && (
+                                <div className="bg-white/40 backdrop-blur-md p-3 rounded-2xl flex justify-between items-center border border-white/40 animate-fade-in mx-2">
+                                    <div className="text-xs font-bold text-gray-600 uppercase tracking-wide">Patient History</div>
+                                    <div className="flex gap-4">
+                                        <div className="text-center"><div className="text-xs text-gray-500">Visits</div><div className="font-bold text-indigo-600">{patientStats.visits}</div></div>
+                                        <div className="text-center"><div className="text-xs text-gray-500">Spent</div><div className="font-bold text-green-600">{formatCurrency(patientStats.spent)}</div></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide px-2">Referral Source</label>
+                            <div className="flex bg-white/60 backdrop-blur-md rounded-2xl p-1 mb-4 shadow-sm border border-white/40">
+                                {['Walk-in', 'Dr. Venkat Reddy'].map(src => (
+                                    <button
+                                        key={src}
+                                        onClick={() => setForm({...form, referralSource: src})}
+                                        className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${form.referralSource === src ? 'bg-white shadow text-ios-blue' : 'text-gray-500'}`}
+                                    >
+                                        {src}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            <div className="glass-panel rounded-3xl p-2">
+                                <IOSInput label="Base Fee (₹)" placeholder="0" type="number" value={form.fee} onChange={e => setForm({...form, fee: e.target.value})} />
+                                <div className="h-[1px] bg-gray-200/50 mx-4"></div>
+                                <IOSSelect label="Payment Method" options={['Cash', 'UPI', 'Card', 'Package Advance', 'FOC']} value={form.paymentMode} onChange={e => handlePaymentChange(e.target.value)} />
+                                {form.paymentMode === 'Package Advance' && (<div className="animate-fade-in p-4 bg-purple-50/50 rounded-2xl mb-2 mt-2 border border-purple-100"><label className="block text-xs font-bold text-purple-600 uppercase mb-2 tracking-wide">Paid Via</label><div className="flex bg-white/80 rounded-xl p-1 shadow-sm mb-4">{['Cash', 'UPI', 'Card'].map(m => (<button key={m} onClick={() => setPkgMode(m)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${pkgMode === m ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500'}`}>{m}</button>))}</div><IOSInput label="Total Sessions" placeholder="e.g. 7 or 10" type="number" value={form.totalSessions} onChange={e => setForm({...form, totalSessions: e.target.value})} /></div>)}
+                                <div className="h-[1px] bg-gray-200/50 mx-4"></div>
+                                <div className="p-4">
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-3 tracking-wide">Conditions (Select Multiple)</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {TREATMENT_OPTIONS.map(opt => (
+                                            <button key={opt} onClick={() => toggleTreatment(opt)} className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all duration-200 ${selectedTreatments.includes(opt) ? 'bg-ios-blue text-white border-ios-blue shadow-md transform scale-105' : 'bg-white/50 text-gray-600 border-gray-200 hover:bg-white'}`}>{opt}</button>
+                                        ))}
+                                    </div>
+                                    {selectedTreatments.includes('Others') && (<div className="animate-fade-in mt-4"><IOSInput label="Specify Condition" placeholder="e.g. Cerebral Palsy" value={customTreatment} onChange={e => setCustomTreatment(e.target.value)} /></div>)}
+                                </div>
+                                <div className="h-[1px] bg-gray-200/50 mx-4"></div>
+                                
+                                {/* Manual Therapy Section */}
+                                <div className="p-4 bg-blue-50/30">
+                                    <label className="block text-xs font-bold text-blue-600 uppercase mb-3 tracking-wide flex items-center gap-2"><Icon path={Icons.Plus} size={14}/> Manual Therapy & Extras</label>
+                                    
+                                    {/* Dry Needling */}
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <button onClick={() => toggleManual('dryNeedling')} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${manualTherapy.dryNeedling.selected ? 'bg-blue-500 text-white shadow-md' : 'bg-white border text-gray-500'}`}>Dry-Needling</button>
+                                        {manualTherapy.dryNeedling.selected && <div className="w-24 animate-fade-in"><input type="number" placeholder="Price" value={manualTherapy.dryNeedling.price} onChange={e => updateManualPrice('dryNeedling', e.target.value)} className="w-full p-2 rounded-xl text-sm border border-blue-200 outline-none" /></div>}
+                                    </div>
+
+                                    {/* Kinesio Taping */}
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <button onClick={() => toggleManual('kinesio')} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${manualTherapy.kinesio.selected ? 'bg-blue-500 text-white shadow-md' : 'bg-white border text-gray-500'}`}>Kinesio-Taping</button>
+                                        {manualTherapy.kinesio.selected && <div className="w-24 animate-fade-in"><input type="number" placeholder="Price" value={manualTherapy.kinesio.price} onChange={e => updateManualPrice('kinesio', e.target.value)} className="w-full p-2 rounded-xl text-sm border border-blue-200 outline-none" /></div>}
+                                    </div>
+
+                                    {/* Others */}
+                                    <div className="flex flex-col gap-2">
+                                        <button onClick={() => toggleManual('others')} className={`w-full py-2 rounded-xl text-xs font-bold transition-all ${manualTherapy.others.selected ? 'bg-blue-500 text-white shadow-md' : 'bg-white border text-gray-500'}`}>Others</button>
+                                        {manualTherapy.others.selected && (
+                                            <div className="flex gap-2 animate-fade-in">
+                                                <input type="text" placeholder="Treatment Name" value={manualTherapy.others.name} onChange={e => updateManualName(e.target.value)} className="flex-1 p-2 rounded-xl text-sm border border-blue-200 outline-none" />
+                                                <input type="number" placeholder="Price" value={manualTherapy.others.price} onChange={e => updateManualPrice('others', e.target.value)} className="w-24 p-2 rounded-xl text-sm border border-blue-200 outline-none" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center rounded-b-3xl">
+                                    <span className="text-sm font-bold text-gray-500">Total Amount</span>
+                                    <span className="text-xl font-extrabold text-gray-900">{formatCurrency(calculatedTotal)}</span>
+                                </div>
+                            </div>
+
+                            <div className="glass-panel rounded-3xl p-4">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Date</label>
+                                <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full bg-white/50 p-4 rounded-2xl outline-none font-bold text-gray-900 shadow-sm border border-white/40 mb-4" />
+                                <div className="h-[1px] bg-gray-200/50 mb-4"></div>
+                                <IOSTextArea label="Clinical Notes" placeholder="Add observations..." value={form.notes || ''} onChange={e => setForm({...form, notes: e.target.value})} />
+                            </div>
+
+                            {/* Patient History Widget */}
+                            {pastVisits.length > 0 && (
+                                <div className="animate-fade-in mt-4">
+                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wide px-2">Previous Visits ({pastVisits.length})</h4>
+                                    <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-gray-200/50">
+                                        {pastVisits.map(visit => (
+                                            <div key={visit.id} className="p-3 flex justify-between items-center text-sm">
+                                                <div>
+                                                    <span className="font-semibold text-gray-800">{formatDate(visit.date)}</span>
+                                                    <span className="text-xs text-gray-500 block">{visit.treatment}</span>
+                                                </div>
+                                                <span className="font-mono text-xs font-bold text-gray-600">{formatCurrency(visit.fee)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {form.id && (
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={handleGenerateReceipt} className="flex-1 py-3 bg-white/60 text-ios-blue font-bold rounded-2xl shadow-sm border border-blue-100 flex items-center justify-center gap-2"><Icon path={Icons.Receipt} size={18} /> Receipt</button>
+                                    <button onClick={() => onDelete(form.id)} className="flex-1 py-3 bg-red-50/80 text-red-600 font-bold rounded-2xl shadow-sm border border-red-100 flex items-center justify-center gap-2"><Icon path={Icons.Trash} size={18} /> Delete</button>
+                                </div>
+                            )}
+                            
+                            {/* Spacer for bottom safe area visual comfort if scrolling */}
+                            <div className="h-4"></div>
+                        </div>
+
+                        {/* Fixed Bottom Action Bar */}
+                        <div className="glass-tab p-4 pb-safe flex gap-3 border-t border-white/50 bg-white/80 backdrop-blur-xl z-20 shrink-0">
+                             <button onClick={onCancel} className="flex-1 py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl active:scale-95 transition-transform">Cancel</button>
+                             <button onClick={handleSubmit} className="flex-[2] py-4 bg-ios-blue text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                <Icon path={Icons.CheckCircle} size={20} /> {form.id ? 'Save Changes' : 'Save & Done'}
+                             </button>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        const LockScreen = ({ onUnlock, currentPin }) => {
+            const [pin, setPin] = useState('');
+            const handleNum = (n) => { const next = pin + n; setPin(next); if (next === currentPin) onUnlock(); if (next.length >= 4 && next !== currentPin) setTimeout(() => setPin(''), 300); };
+            return (
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white animate-in fade-in duration-500">
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                        <div className="absolute top-0 -right-4 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                        <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+                    </div>
+                    <div className="w-full md:max-w-lg bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-glass flex flex-col items-center relative z-10 mx-4">
+                        <div className="mb-8 flex flex-col items-center">
+                            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-md shadow-lg border border-white/10"><Icon path={Icons.Lock} size={40} /></div>
+                            <h2 className="text-2xl font-bold tracking-wide text-center">DM Neuro Physiotherapy Centre</h2>
+                            <p className="text-xs text-white/70 mt-1 uppercase tracking-widest font-semibold">Enter Passcode</p>
+                        </div>
+                        <div className="flex gap-4 mb-8">{[0,1,2,3].map(i => (<div key={i} className={`w-3 h-3 rounded-full transition-all duration-300 ${i < pin.length ? 'bg-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'bg-white/20'}`}></div>))}</div>
+                        <div className="grid grid-cols-3 gap-4 w-full max-w-xs">{[1,2,3,4,5,6,7,8,9].map(n => (<button key={n} onClick={() => handleNum(n)} className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 backdrop-blur-md text-2xl font-medium transition-all flex items-center justify-center border border-white/10 shadow-lg">{n}</button>))}<div className="col-start-2"><button onClick={() => handleNum(0)} className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 backdrop-blur-md text-2xl font-medium transition-all flex items-center justify-center border border-white/10 shadow-lg">0</button></div></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [locked, setLocked] = useState(true);
+            const [view, setView] = useState('dashboard');
+            const [modalData, setModalData] = useState(null);
+            
+            const [visits, setVisits] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_visits')) || []; } catch { return []; } });
+            const [expenses, setExpenses] = useState(() => { try { return JSON.parse(SafeStorage.getItem('dm_expenses')) || []; } catch { return []; } });
+            const [pin, setPin] = useState(() => SafeStorage.getItem('dm_pin') || '7177');
+            const [lastBackup, setLastBackup] = useState(() => SafeStorage.getItem('dm_last_backup'));
+            const [syncUrl, setSyncUrl] = useState(() => SafeStorage.getItem('dm_sync_url') || '');
+            const [assessmentUrl, setAssessmentUrl] = useState(() => SafeStorage.getItem('dm_assessment_url') || './assessment.html');
+            const [isSyncing, setIsSyncing] = useState(false);
+
+            // Auto-lock logic
+            const timerRef = useRef(null);
+            const resetTimer = () => {
+                if (timerRef.current) clearTimeout(timerRef.current);
+                timerRef.current = setTimeout(() => setLocked(true), 120000); // 2 minutes
+            };
+
+            useEffect(() => {
+                const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+                const handler = () => resetTimer();
+                events.forEach(e => window.addEventListener(e, handler));
+                resetTimer();
+                return () => {
+                    events.forEach(e => window.removeEventListener(e, handler));
+                    if (timerRef.current) clearTimeout(timerRef.current);
+                };
+            }, []);
+
+            useEffect(() => { 
+                SafeStorage.setItem('dm_visits', JSON.stringify(visits)); 
+                SafeStorage.setItem('dm_expenses', JSON.stringify(expenses)); 
+                SafeStorage.setItem('dm_pin', pin);
+                SafeStorage.setItem('dm_sync_url', syncUrl);
+                SafeStorage.setItem('dm_assessment_url', assessmentUrl);
+                if (lastBackup) SafeStorage.setItem('dm_last_backup', lastBackup);
+            }, [visits, expenses, pin, lastBackup, syncUrl, assessmentUrl]);
+
+            const handleSave = (data) => { if (data.id) setVisits(prev => prev.map(v => v.id === data.id ? data : v)); else setVisits(prev => [{ ...data, id: generateId() }, ...prev]); setModalData(null); };
+            
+            const handleRepeatVisit = (patient) => {
+                setModalData({
+                    id: null, // New ID will be generated on save
+                    name: patient.name,
+                    age: patient.age || '', // Carry over
+                    sex: patient.sex || 'Male', // Carry over
+                    phone: patient.phone,
+                    address: patient.address,
+                    fee: patient.fee, // Pre-fill last fee
+                    paymentMode: 'Cash', // Default to Cash, or could carry over
+                    totalSessions: '',
+                    date: getToday(),
+                    notes: '', // Fresh notes for new visit
+                    referralSource: patient.referralSource, // Carry over referral source
+                    treatment: patient.treatment // Carry over last treatment
+                });
+            };
+            
+            const handleSync = async () => {
+                if(!syncUrl) return alert("Please configure Google Apps Script URL in Settings first.");
+                setIsSyncing(true);
+                try {
+                    // Simple sync: push local data to sheet. 
+                    // For full bidirectional sync, you'd need a more complex merge strategy.
+                    // Here we send data to the script.
+                    await fetch(syncUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'sync_up', visits, expenses }),
+                        mode: 'no-cors' // Google Apps Script Web App constraint
+                    });
+                    alert("Sync signal sent to cloud.");
+                } catch (e) {
+                    alert("Sync Error: " + e.message);
+                } finally {
+                    setIsSyncing(false);
+                }
+            };
+            
+            const handleAssess = (patient) => {
+                const params = new URLSearchParams({
+                    name: patient.name || '',
+                    age: patient.age || '', // Pass age
+                    sex: patient.sex || '', // Pass sex
+                    phone: patient.phone || '',
+                    address: patient.address || '',
+                    id: patient.patientId || patient.id || ''
+                });
+                window.open(`${assessmentUrl}?${params.toString()}`, '_blank');
+            };
+
+
+            const handleDeleteVisit = (id) => {
+                if(confirm("Are you sure you want to delete this record? This cannot be undone.")) {
+                    setVisits(prev => prev.filter(v => v.id !== id));
+                    setModalData(null);
+                }
+            };
+
+            const handleGenerateReceipt = (visit) => {
+                const text = `🧾 *Payment Receipt*\n*DM Neuro Physiotherapy and Rehabilitation Centre*\nKompally, Hyderabad - 500014\n\n*Dr. Kiran Madhav T*\nPT, COMT, MIAP\n\nPatient: ${visit.name}\nDate: ${formatDate(visit.date)}\nTreatment: ${visit.treatment}\nAmount: ${formatCurrency(visit.fee)} (${visit.paymentMode})\n\nReceived with thanks.`;
+                const url = `https://wa.me/91${visit.phone}?text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            };
+
+            const handleCheckIn = (pkg) => { if(confirm(`Mark Attendance for ${pkg.name}?`)) { const newVisit = { id: generateId(), name: pkg.name, phone: pkg.phone, treatment: pkg.treatment, fee: 0, paymentMode: 'Package Visit', packageId: pkg.packageId, date: getToday() }; setVisits(prev => [newVisit, ...prev]); alert("Checked In Successfully!"); } };
+            const handleAddExpense = (exp) => setExpenses(prev => [{ ...exp, id: generateId() }, ...prev]);
+            const handleDeleteExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
+            const handleBackup = () => { const dataStr = JSON.stringify({ visits, expenses, date: new Date().toISOString() }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([dataStr], { type: "application/json" })); link.download = `Backup_${getToday()}.json`; link.click(); setLastBackup(new Date().toISOString()); };
+            const handleRestore = (data) => { if(data.visits) setVisits(data.visits); if(data.expenses) setExpenses(data.expenses); alert("Data Restored!"); };
+            const handleReset = () => { 
+                setVisits([]); 
+                setExpenses([]); 
+                alert("System Reset"); 
+            };
+            const handleExportCSV = () => { const csv = "Date,Name,Fee,Treatment,Payment\n" + visits.map(v => `${v.date},"${v.name}",${v.fee},${v.treatment},${v.paymentMode}`).join("\n"); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); link.download = `Visits_${getToday()}.csv`; link.click(); };
+
+            if (locked) return <LockScreen onUnlock={() => setLocked(false)} currentPin={pin} />;
+
+            return (
+                <VibrantWrapper>
+                    <div className="w-full md:max-w-3xl mx-auto h-full flex flex-col shadow-2xl">
+                        <div className="flex-1 overflow-y-auto no-scrollbar">
+                            {view === 'dashboard' && <Dashboard visits={visits} setView={setView} onNewVisit={() => setModalData({})} onCheckIn={handleCheckIn} lastBackup={lastBackup} onSync={handleSync} />}
+                            {view === 'visits' && <VisitsList visits={visits} onEdit={setModalData} onDelete={handleDeleteVisit} onRepeat={handleRepeatVisit} onAssess={handleAssess} />}
+                            {view === 'finances' && <ReportsView visits={visits} expenses={expenses} onAddExpense={handleAddExpense} onDeleteExpense={handleDeleteExpense} />}
+                            {view === 'settings' && <SettingsView onBackup={handleBackup} onRestore={handleRestore} onReset={handleReset} onExportCSV={handleExportCSV} setPin={setPin} onBack={() => setView('dashboard')} currentPin={pin} onSetSyncUrl={setSyncUrl} onSetAssessmentUrl={setAssessmentUrl} />}
+                        </div>
+                        <div className="glass-tab pb-safe px-6 h-[88px] flex justify-between items-start pt-3 shrink-0"><NavTab active={view === 'dashboard'} onClick={() => setView('dashboard')} icon={Icons.Home} label="Today" /><NavTab active={view === 'visits'} onClick={() => setView('visits')} icon={Icons.Users} label="Patients" /><NavTab active={view === 'finances'} onClick={() => setView('finances')} icon={Icons.Chart} label="Reports" /><NavTab active={view === 'settings'} onClick={() => setView('settings')} icon={Icons.Settings} label="Settings" /></div>
+                    </div>
+                    {modalData && <EntryForm initialData={modalData.id ? modalData : null} onSave={handleSave} onCancel={() => setModalData(null)} onDelete={handleDeleteVisit} onReceipt={handleGenerateReceipt} visits={visits} />}
+                </VibrantWrapper>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 </html>
