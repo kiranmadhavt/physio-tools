@@ -366,14 +366,16 @@
                         </div>
                         <div className="w-11 h-11 glass-panel !p-0 rounded-full flex items-center justify-center border border-white/60 shadow-sm"><span className="font-bold text-gray-500 text-xs">KM</span></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* CHANGED: md:grid-cols-4 for better iPad scaling */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <Card className="hover:bg-white/40 transition-colors"><div className="text-gray-500 text-[11px] font-bold uppercase mb-2 tracking-wider">Revenue</div><div className="text-[28px] font-semibold text-gray-900 tracking-tight">{formatCurrency(stats.revenue)}</div></Card>
                         <Card className="hover:bg-white/40 transition-colors"><div className="text-gray-500 text-[11px] font-bold uppercase mb-2 tracking-wider">Patients</div><div className="text-[28px] font-semibold text-gray-900 tracking-tight">{stats.count}</div></Card>
                     </div>
                     <button onClick={onNewVisit} className="w-full bg-ios-blue/90 backdrop-blur-sm text-white p-4 rounded-[22px] font-semibold text-[17px] shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 ios-btn active:scale-[0.98] transition-all border border-white/20"><span className="text-2xl font-light mb-0.5">+</span> New Consultation</button>
                     {activePackages.length > 0 && <div>
                         <h3 className="text-lg font-bold text-gray-900 mb-3 px-1 opacity-90">Active Packages</h3>
-                        <div className="space-y-3">{activePackages.map(pkg => (
+                        {/* CHANGED: Grid layout for packages on iPad */}
+                        <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">{activePackages.map(pkg => (
                             <Card key={pkg.id} className="relative overflow-hidden !p-0 !bg-white/70">
                                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-ios-purple"></div>
                                 <div className="p-5 pl-6">
@@ -438,7 +440,7 @@
                 <div className="p-6 pb-32 pt-safe page-enter">
                     <h1 className="text-[34px] font-bold text-gray-900 mb-6 tracking-tight px-1 drop-shadow-sm">Clinical Tools</h1>
                     {recentPatient && <div className="mb-6 p-4 bg-blue-50/40 rounded-[22px] border border-blue-100/50 flex items-center gap-3 backdrop-blur-sm"><div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-[13px] shadow-sm">{recentPatient.name.charAt(0)}</div><div className="text-[13px] text-blue-800">Recent patient: <span className="font-bold">{recentPatient.name}</span></div></div>}
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {tools.map((t, i) => (
                             <button key={i} onClick={() => launchTool(t.file)} className="glass-panel !p-4 rounded-[22px] flex items-center justify-between active:scale-[0.98] transition-all hover:bg-white/60">
                                 <div className="flex items-center gap-5"><div className={`w-12 h-12 rounded-[16px] ${t.color} text-white flex items-center justify-center shadow-lg ring-1 ring-white/20`}>{Icons.Tools}</div><div className="text-left"><div className="font-bold text-gray-900 text-[17px]">{t.name}</div><div className="text-[13px] text-gray-500 font-medium">Launch Assessment</div></div></div><div className="text-gray-400/70">{Icons.ExternalLink}</div>
@@ -508,24 +510,28 @@
             return (
                 <div className="p-6 pb-32 pt-safe page-enter">
                     <h1 className="text-[34px] font-bold text-gray-900 mb-6 tracking-tight px-1 drop-shadow-sm">Settings</h1>
-                    <InputGroup label="Clinic Details"><div className="p-4 flex items-center justify-between"><span className="text-[17px] text-gray-900">Doctor Name</span><input className="text-right outline-none bg-transparent text-gray-500 placeholder-gray-400 font-sans text-[17px]" value={settings.doctorName} onChange={e => setSettings({...settings, doctorName: e.target.value})} /></div></InputGroup>
-                    <InputGroup label="Cloud Sync (Google Sheets)"><div className="p-4 border-b border-gray-200/40"><input className="w-full outline-none bg-transparent text-gray-600 placeholder-gray-400 font-mono text-[13px]" placeholder="Paste Google Apps Script Web App URL here..." value={settings.googleSheetUrl} onChange={e => setSettings({...settings, googleSheetUrl: e.target.value})} /></div><button onClick={syncToCloud} className="w-full text-left p-4 text-ios-blue active:bg-blue-50/50 transition-colors flex items-center gap-2 font-medium text-[17px]">{Icons.Cloud} Sync Now</button></InputGroup>
-                    
-                    <InputGroup label="Tool Paths Config">
-                        <div className="p-4 space-y-3">
-                            <div><label className="text-[10px] text-gray-400 uppercase font-bold">Extremities File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.extremities} onChange={e => setPathInputs({...pathInputs, extremities: e.target.value})} /></div>
-                            <div><label className="text-[10px] text-gray-400 uppercase font-bold">Neuro File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.neuro} onChange={e => setPathInputs({...pathInputs, neuro: e.target.value})} /></div>
-                            <div><label className="text-[10px] text-gray-400 uppercase font-bold">Osteopath File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.osteopath} onChange={e => setPathInputs({...pathInputs, osteopath: e.target.value})} /></div>
-                            <div><label className="text-[10px] text-gray-400 uppercase font-bold">Physio File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.physioOsteo} onChange={e => setPathInputs({...pathInputs, physioOsteo: e.target.value})} /></div>
-                            <div><label className="text-[10px] text-gray-400 uppercase font-bold">Regional File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.regional} onChange={e => setPathInputs({...pathInputs, regional: e.target.value})} /></div>
-                            <button onClick={handleSavePaths} className="bg-ios-blue text-white px-4 py-2 rounded-lg text-xs font-bold w-full">Save Paths</button>
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <InputGroup label="Clinic Details"><div className="p-4 flex items-center justify-between"><span className="text-[17px] text-gray-900">Doctor Name</span><input className="text-right outline-none bg-transparent text-gray-500 placeholder-gray-400 font-sans text-[17px]" value={settings.doctorName} onChange={e => setSettings({...settings, doctorName: e.target.value})} /></div></InputGroup>
+                            <InputGroup label="Cloud Sync (Google Sheets)"><div className="p-4 border-b border-gray-200/40"><input className="w-full outline-none bg-transparent text-gray-600 placeholder-gray-400 font-mono text-[13px]" placeholder="Paste Google Apps Script Web App URL here..." value={settings.googleSheetUrl} onChange={e => setSettings({...settings, googleSheetUrl: e.target.value})} /></div><button onClick={syncToCloud} className="w-full text-left p-4 text-ios-blue active:bg-blue-50/50 transition-colors flex items-center gap-2 font-medium text-[17px]">{Icons.Cloud} Sync Now</button></InputGroup>
+                            <InputGroup label="Security"><div className="p-4 flex items-center justify-between"><span className="text-[17px] text-gray-900">Change PIN</span><input type="tel" maxLength="4" className="text-right outline-none bg-transparent text-gray-500 placeholder-gray-400 w-20 font-mono text-[17px]" value={settings.pin} onChange={e => setSettings({...settings, pin: e.target.value.slice(0, 4)})} /></div></InputGroup>
                         </div>
-                    </InputGroup>
-
-                    <InputGroup label="Security"><div className="p-4 flex items-center justify-between"><span className="text-[17px] text-gray-900">Change PIN</span><input type="tel" maxLength="4" className="text-right outline-none bg-transparent text-gray-500 placeholder-gray-400 w-20 font-mono text-[17px]" value={settings.pin} onChange={e => setSettings({...settings, pin: e.target.value.slice(0, 4)})} /></div></InputGroup>
-                    <InputGroup label="Data Management"><button onClick={handleBackup} className="w-full text-left p-4 text-ios-blue active:bg-blue-50/50 transition-colors flex items-center gap-2 font-medium text-[17px]">{Icons.Download} Backup to File (JSON)</button><label className="w-full block text-left p-4 text-ios-blue active:bg-blue-50/50 transition-colors cursor-pointer border-t border-gray-200/40 font-medium text-[17px]">Restore from File<input type="file" className="hidden" accept=".json" onChange={handleRestore} /></label></InputGroup>
-                    <button onClick={onReset} className="w-full mt-8 bg-white/70 backdrop-blur-md border border-red-200/60 text-ios-red font-semibold p-4 rounded-[18px] shadow-sm text-[17px] active:bg-red-50/50 transition-colors">Factory Reset App</button>
-                    <div className="mt-8 text-center text-[12px] text-gray-400 font-medium opacity-80">DM Neuro Physiotherapy Centre v2.2 <br/> Glassmorphism Edition</div>
+                        <div>
+                            <InputGroup label="Tool Paths Config">
+                                <div className="p-4 space-y-3">
+                                    <div><label className="text-[10px] text-gray-400 uppercase font-bold">Extremities File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.extremities} onChange={e => setPathInputs({...pathInputs, extremities: e.target.value})} /></div>
+                                    <div><label className="text-[10px] text-gray-400 uppercase font-bold">Neuro File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.neuro} onChange={e => setPathInputs({...pathInputs, neuro: e.target.value})} /></div>
+                                    <div><label className="text-[10px] text-gray-400 uppercase font-bold">Osteopath File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.osteopath} onChange={e => setPathInputs({...pathInputs, osteopath: e.target.value})} /></div>
+                                    <div><label className="text-[10px] text-gray-400 uppercase font-bold">Physio File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.physioOsteo} onChange={e => setPathInputs({...pathInputs, physioOsteo: e.target.value})} /></div>
+                                    <div><label className="text-[10px] text-gray-400 uppercase font-bold">Regional File</label><input className="w-full bg-gray-50 p-2 rounded text-xs font-mono" value={pathInputs.regional} onChange={e => setPathInputs({...pathInputs, regional: e.target.value})} /></div>
+                                    <button onClick={handleSavePaths} className="bg-ios-blue text-white px-4 py-2 rounded-lg text-xs font-bold w-full">Save Paths</button>
+                                </div>
+                            </InputGroup>
+                            <InputGroup label="Data Management"><button onClick={handleBackup} className="w-full text-left p-4 text-ios-blue active:bg-blue-50/50 transition-colors flex items-center gap-2 font-medium text-[17px]">{Icons.Download} Backup to File (JSON)</button><label className="w-full block text-left p-4 text-ios-blue active:bg-blue-50/50 transition-colors cursor-pointer border-t border-gray-200/40 font-medium text-[17px]">Restore from File<input type="file" className="hidden" accept=".json" onChange={handleRestore} /></label></InputGroup>
+                            <button onClick={onReset} className="w-full mt-4 bg-white/70 backdrop-blur-md border border-red-200/60 text-ios-red font-semibold p-4 rounded-[18px] shadow-sm text-[17px] active:bg-red-50/50 transition-colors">Factory Reset App</button>
+                        </div>
+                    </div>
+                    <div className="mt-8 text-center text-[12px] text-gray-400 font-medium opacity-80">DM Neuro Physiotherapy Centre v2.3 <br/> Glassmorphism Edition (iPad Optimized)</div>
                 </div>
             );
         };
@@ -632,13 +638,18 @@
             if (locked) return <LockScreen pin={settings.pin} onUnlock={() => setLocked(false)} onReset={resetAll} />;
 
             return (
-                <div className="app-container max-w-md mx-auto relative shadow-2xl overflow-hidden border-x border-white/20">
-                    {view === 'dashboard' && <Dashboard onNewVisit={openNew} />}
-                    {view === 'patients' && <PatientList onEdit={openEdit} />}
-                    {view === 'tools' && <ToolsView toolPaths={toolPaths} />}
-                    {view === 'reports' && <Reports />}
-                    {view === 'settings' && <Settings onReset={resetAll} toolPaths={toolPaths} onUpdateToolPath={setToolPaths} />}
-                    <div className="fixed bottom-0 w-full max-w-md glass-nav flex justify-between px-6 pb-safe pt-3 z-40">
+                // CHANGED: Increased max-width to 7xl for iPad friendliness, and set flex layout
+                <div className="app-container w-full max-w-7xl mx-auto relative shadow-2xl overflow-hidden border-x border-white/20 h-screen flex flex-col">
+                    {/* CHANGED: Content area takes full remaining height */}
+                    <div className="flex-1 overflow-y-auto no-scrollbar">
+                        {view === 'dashboard' && <Dashboard onNewVisit={openNew} />}
+                        {view === 'patients' && <PatientList onEdit={openEdit} />}
+                        {view === 'tools' && <ToolsView toolPaths={toolPaths} />}
+                        {view === 'reports' && <Reports />}
+                        {view === 'settings' && <Settings onReset={resetAll} toolPaths={toolPaths} onUpdateToolPath={setToolPaths} />}
+                    </div>
+                    {/* CHANGED: Fixed bottom nav bar width to match app container */}
+                    <div className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-7xl glass-nav flex justify-between px-6 pb-safe pt-3 z-40">
                         <TabButton icon={Icons.Home} label="Today" active={view === 'dashboard'} onClick={() => setView('dashboard')} />
                         <TabButton icon={Icons.Users} label="Patients" active={view === 'patients'} onClick={() => setView('patients')} />
                         <TabButton icon={Icons.Tools} label="Tools" active={view === 'tools'} onClick={() => setView('tools')} />
