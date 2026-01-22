@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Physio App" />
+    <title>Extremities & Spine</title>
+    <!-- Font Awesome for icons (requires internet connection) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reset and Base Styles */
+        :root {
+            /* Palette */
+            --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+            --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b; --slate-900: #0f172a;
+            --indigo-500: #6366f1; --indigo-600: #4f46e5; --indigo-700: #4338ca;
+            --white: #ffffff; --black: #000000;
+            
+            /* Glassmorphism Variables (Light Mode) */
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --glass-blur: 12px;
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #eef2ff 50%, #fce7f3 100%);
+            
+            --text-main: var(--slate-800);
+            --text-muted: var(--slate-500);
+            --text-sidebar: var(--slate-800); /* Sidebar text darker in glass mode */
+            
+            --primary: var(--indigo-600);
+            --primary-hover: var(--indigo-700);
+            --success: #22c55e; --warning: #eab308; --danger: #ef4444;
+            
+            --red-bg: rgba(254, 226, 226, 0.8); /* Red 100 */
+            --red-border: rgba(254, 202, 202, 0.5);
+            --red-text: var(--red-900);
+
+            /* iOS Safe Area Variables */
+            --safe-area-top: env(safe-area-inset-top);
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode {
+            --glass-bg: rgba(30, 41, 59, 0.75); /* Slate 800 with opacity */
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            
+            --text-main: #f1f5f9; /* Slate 100 */
+            --text-muted: #94a3b8; /* Slate 400 */
+            --text-sidebar: #e2e8f0; /* Slate 200 */
+            
+            --primary: #818cf8; /* Indigo 400 */
+            --primary-hover: #6366f1; /* Indigo 500 */
+            
+            --red-bg: rgba(69, 10, 10, 0.7); /* Red 950 */
+            --red-border: rgba(127, 29, 29, 0.5); /* Red 900 */
+            --red-text: #fca5a5; /* Red 300 */
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            background-size: cover;
+            color: var(--text-main);
+            line-height: 1.5;
+            transition: background 0.3s, color 0.3s;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        
+        /* Layout */
+        .app-container { display: flex; height: 100vh; }
+        
+        /* Glass Style Class */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .sidebar {
+            width: 260px;
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 40;
+            transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column;
+            padding-top: var(--safe-area-top);
+            padding-bottom: var(--safe-area-bottom);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            /* Glass Sidebar */
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border-right: 1px solid var(--glass-border);
+        }
+        
+        /* Dark mode sidebar text needs specific handling if background is light glass vs dark glass */
+        .sidebar { color: var(--text-sidebar); }
+
+        .sidebar.is-open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
+        
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
+        
+        .header { 
+            z-index: 20; 
+            color: var(--text-main); 
+            padding-top: var(--safe-area-top);
+            /* Glass Header */
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .content-area { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            scroll-behavior: smooth; 
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(2rem + var(--safe-area-bottom));
+        }
+        
+        .container { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        @media (min-width: 1024px) {
+            .sidebar { position: relative; transform: translateX(0); }
+            .sidebar-overlay { display: none; }
+            .sidebar { width: 280px; } 
+        }
+
+        /* Sidebar Styles */
+        .sidebar-header { padding: 1.5rem 1rem 1rem 1rem; }
+        .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin: 0; letter-spacing: -0.5px; }
+        body.dark-mode .sidebar-header h2 { color: var(--text-main); }
+        
+        .sidebar nav { flex-grow: 1; padding: 1rem 0.75rem; }
+        .nav-item {
+            display: flex; align-items: center; padding: 0.85rem 1rem;
+            font-size: 0.95rem; font-weight: 600; border-radius: 0.75rem;
+            color: var(--text-muted); text-decoration: none; transition: all 0.2s ease;
+            margin-bottom: 0.5rem;
+            user-select: none; -webkit-user-select: none;
+        }
+        .nav-item:active, .nav-item:hover { background-color: rgba(255,255,255,0.4); color: var(--primary); transform: translateX(4px); }
+        body.dark-mode .nav-item:active, body.dark-mode .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
+        
+        .nav-item.active { 
+            background: linear-gradient(135deg, var(--primary), var(--indigo-500)); 
+            color: var(--white); 
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .nav-item i { width: 1.5rem; margin-right: 0.75rem; font-size: 1.1rem; }
+        .sidebar-overlay { position: fixed; inset: 0; background-color: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 30; }
+        
+        /* Header Styles */
+        .header-container { display: flex; align-items: center; justify-content: space-between; height: 4rem; padding: 0 1.25rem; }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .menu-toggle { 
+            color: var(--text-main); border: none; background: transparent; 
+            font-size: 1.25rem; cursor: pointer; padding: 0.5rem;
+            min-width: 44px; min-height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .menu-toggle:hover { background: rgba(0,0,0,0.05); }
+        body.dark-mode .menu-toggle:hover { background: rgba(255,255,255,0.1); }
+        
+        .header-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.025em; }
+        .header-actions { display: flex; align-items: center; gap: 0.5rem; }
+        
+        /* Button Styles */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem;
+            font-size: 0.9rem; font-weight: 600; color: var(--text-main);
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            backdrop-filter: blur(4px);
+            border-radius: 0.75rem; cursor: pointer; transition: all 0.2s ease;
+            min-height: 44px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            user-select: none; -webkit-user-select: none;
+        }
+        .btn:active { transform: scale(0.96); box-shadow: none; }
+        .btn i { color: var(--text-muted); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--indigo-500));
+            color: var(--white); border: none;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+        .btn-primary:hover { box-shadow: 0 6px 14px rgba(79, 70, 229, 0.4); transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary i { color: var(--white); }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; min-height: 32px; border-radius: 0.5rem; }
+        
+        /* Card Styles (Glass) */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background: rgba(255,255,255,0.3); /* Slightly lighter/darker than card body */
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem; font-size: 1.1rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        body.dark-mode .card-header { background: rgba(0,0,0,0.2); }
+        
+        .card-header-left { display: flex; align-items: center; }
+        .card-header-left i { margin-right: 0.75rem; color: var(--primary); background: rgba(99, 102, 241, 0.1); padding: 0.5rem; border-radius: 0.5rem; }
+        .card-body { padding: 1.5rem; }
+        
+        .grid { display: grid; gap: 1.25rem; }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .col-span-2 { grid-column: span 2 / span 2; }
+        hr { border: 0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0; }
+
+        @media (max-width: 768px) {
+            .grid-cols-2, .grid-cols-3 { grid-template-columns: 1fr; }
+            .col-span-2 { grid-column: auto; }
+            .container { padding: 1rem; }
+            .btn span { display: none; }
+            .btn i { margin: 0; }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1023px) {
+            .grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+        .form-label { display: block; font-size: 0.95rem; font-weight: 600; color: var(--text-main); }
+        
+        .input, .textarea {
+            display: block; width: 100%; padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.4); 
+            color: var(--text-main);
+            border: 1px solid var(--glass-border); border-radius: 0.75rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            resize: none; overflow-y: hidden; -webkit-appearance: none;
+        }
+        body.dark-mode .input, body.dark-mode .textarea { background: rgba(0, 0, 0, 0.2); }
+        
+        .input:focus, .textarea:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        body.dark-mode .input:focus, body.dark-mode .textarea:focus { background: rgba(0, 0, 0, 0.4); }
+        
+        /* Symbol Toolbar */
+        .symbol-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .symbol-btn {
+            background: rgba(255,255,255,0.4); border: 1px solid var(--glass-border); color: var(--text-main);
+            border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.1s; user-select: none; -webkit-user-select: none;
+        }
+        body.dark-mode .symbol-btn { background: rgba(255,255,255,0.05); }
+        .symbol-btn:active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* Special Test Chips */
+        .special-tests-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .test-chip {
+            font-size: 0.85rem; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.4); 
+            border: 1px solid var(--glass-border); border-radius: 999px; cursor: pointer; color: var(--text-muted);
+            user-select: none; -webkit-user-select: none; transition: all 0.2s;
+        }
+        body.dark-mode .test-chip { background: rgba(255,255,255,0.05); }
+        .test-chip:active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Tooltip */
+        .tooltip-container { position: relative; display: flex; align-items: center; margin-left: 0.5rem; padding: 0.5rem; }
+        .tooltip-icon { color: var(--text-muted); cursor: help; }
+        .tooltip-text {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            margin-bottom: 0.5rem; width: 256px; padding: 0.75rem;
+            font-size: 0.9rem; color: var(--white); 
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.5rem; box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+            opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10;
+        }
+        .tooltip-container:active .tooltip-text, .tooltip-container:hover .tooltip-text { opacity: 1; }
+        
+        /* Body Diagram */
+        .body-diagram { text-align: center; margin-top: 1rem; user-select: none; -webkit-user-select: none; }
+        .body-diagram-svg { margin: 0 auto; display: block; max-width: 100%; height: auto; touch-action: manipulation; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+        /* Interactive parts */
+        .body-part { fill: rgba(255,255,255,0.5); stroke: var(--text-muted); stroke-width: 2; transition: all 0.2s ease; cursor: pointer; pointer-events: all; }
+        body.dark-mode .body-part { fill: rgba(255,255,255,0.1); }
+        .body-part:active { fill: var(--slate-300); }
+        .body-part.selected-pain { fill: var(--red-600); stroke: var(--red-900); }
+        .body-part.selected-numbness { fill: var(--blue-600); stroke: #1e3a8a; }
+        .body-part.selected-stiffness { fill: var(--yellow-500); stroke: #854d0e; }
+        .body-diagram-info { margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-main); }
+        
+        .sensation-selector { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; }
+        .sensation-btn {
+            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; width: 2.5rem; height: 2.5rem; 
+            cursor: pointer; transition: transform 0.1s;
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .sensation-btn:active { transform: scale(1.1); }
+        .sensation-btn.active { border-color: var(--text-main); transform: scale(1.1); box-shadow: 0 0 0 3px rgba(255,255,255,0.3); }
+        .sensation-pain { background: var(--red-600); }
+        .sensation-numbness { background: var(--blue-600); }
+        .sensation-stiffness { background: var(--yellow-500); }
+
+        /* Visual VAS Slider */
+        .vas-container {
+            padding: 1.5rem; background: rgba(255,255,255,0.4); border: 1px solid var(--glass-border); border-radius: 1rem; text-align: center;
+        }
+        body.dark-mode .vas-container { background: rgba(0,0,0,0.2); }
+        .vas-slider-wrapper {
+            position: relative; height: 50px; margin: 1.5rem 0; display: flex; align-items: center;
+        }
+        input[type="range"].vas-slider {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 16px;
+            background: linear-gradient(to right, #22c55e, #eab308, #ef4444);
+            border-radius: 10px; outline: none; margin: 0; cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type="range"].vas-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 36px; height: 36px;
+            background: #ffffff; border: 4px solid #6366f1; border-radius: 50%;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-top: -10px;
+        }
+        .vas-value-display { font-size: 2rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* Red Flags Box */
+        .red-flags-container {
+            background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 1rem; padding: 1.25rem; margin-top: 1.5rem;
+            backdrop-filter: blur(4px);
+        }
+        .red-flags-title { color: var(--red-text); font-weight: 800; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
+        .red-flag-item input { accent-color: var(--danger); width: 1.25rem; height: 1.25rem; }
+        
+        /* Tools Section */
+        .calc-result { 
+            margin-top: 1rem; font-weight: bold; padding: 1rem; 
+            background: rgba(255,255,255,0.4); border-radius: 0.75rem; 
+            text-align: center; font-size: 1.2rem; border: 1px solid var(--glass-border);
+        }
+        body.dark-mode .calc-result { background: rgba(0,0,0,0.2); }
+
+        .stopwatch-display { font-size: 4rem; font-weight: 800; text-align: center; margin: 1rem 0; font-variant-numeric: tabular-nums; color: var(--text-main); text-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .stopwatch-controls { display: flex; justify-content: center; gap: 1.5rem; }
+        .stopwatch-controls .btn { min-width: 80px; height: 50px; font-size: 1.1rem; border-radius: 1rem; }
+        
+        .rom-table th, .rom-table td { padding: 0.75rem; border-bottom: 1px solid var(--glass-border); text-align: left; }
+        .rom-table tbody tr:nth-child(even) { background-color: rgba(0,0,0,0.03); }
+        body.dark-mode .rom-table tbody tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
+
+        /* Exercise Library */
+        .exercise-categories { display: flex; gap: 0.75rem; overflow-x: auto; margin-bottom: 1.5rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; }
+        .exercise-cat-btn { 
+            white-space: nowrap; padding: 0.6rem 1.2rem; border-radius: 9999px; 
+            background: rgba(255,255,255,0.4); border: 1px solid var(--glass-border); color: var(--text-main); 
+            cursor: pointer; transition: all 0.2s; font-size: 0.95rem; 
+        }
+        body.dark-mode .exercise-cat-btn { background: rgba(255,255,255,0.05); }
+        .exercise-cat-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4); }
+        
+        .exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+        .exercise-chip { 
+            padding: 0.75rem; background: rgba(255,255,255,0.4); 
+            border: 1px solid var(--glass-border); border-radius: 0.75rem; 
+            cursor: pointer; text-align: center; font-size: 0.95rem; transition: all 0.2s; 
+            color: var(--text-main); user-select: none; -webkit-user-select: none; 
+        }
+        body.dark-mode .exercise-chip { background: rgba(255,255,255,0.05); }
+        .exercise-chip:active { border-color: var(--primary); color: var(--primary); transform: scale(0.98); background: rgba(255,255,255,0.8); }
+
+        /* Patient List Modal */
+        .patient-list { max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .patient-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--glass-border); }
+        .patient-item:last-child { border-bottom: none; }
+        
+        /* Navigation Buttons */
+        .nav-buttons-container { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-bottom: 3rem; }
+        
+        /* Scroll to Top */
+        .scroll-to-top {
+            position: fixed; bottom: calc(2rem + var(--safe-area-bottom)); right: 2rem; width: 3.5rem; height: 3.5rem; border-radius: 50%;
+            background: var(--primary); color: var(--white); border: none; 
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+            display: flex; justify-content: center; align-items: center; font-size: 1.5rem;
+            cursor: pointer; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 40;
+        }
+        .scroll-to-top.visible { opacity: 1; pointer-events: auto; }
+        .scroll-to-top:active { background: var(--primary-hover); transform: translateY(-2px); }
+
+        /* Toast Notification */
+        .toast-container { position: fixed; bottom: calc(3rem + var(--safe-area-bottom)); left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 0.5rem; width: 90%; max-width: 400px; }
+        .toast {
+            background: rgba(15, 23, 42, 0.95); color: var(--white); padding: 1rem 1.5rem; border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-size: 0.95rem; font-weight: 500;
+            display: flex; align-items: center; gap: 0.75rem; justify-content: center;
+            backdrop-filter: blur(8px);
+            animation: slideUpFade 0.3s ease-out; opacity: 1; transition: opacity 0.3s ease-out;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Report Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background-color: rgba(0,0,0,0.3); z-index: 50;
+            display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; overflow-y: auto;
+            -webkit-overflow-scrolling: touch; backdrop-filter: blur(8px);
+        }
+        .modal {
+            background: var(--glass-bg); border-radius: 1.5rem; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%; max-width: 896px; display: flex; flex-direction: column; margin: auto;
+            max-height: 90vh;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; border-bottom: 1px solid var(--glass-border); color: var(--text-main); }
+        .modal-body { padding: 0; overflow-y: auto; background-color: transparent; -webkit-overflow-scrolling: touch; flex-grow: 1; }
+        
+        /* Report Page (Paper) */
+        .report-page { 
+            background-color: white; 
+            padding: 40px; 
+            font-size: 11pt; 
+            font-family: 'Times New Roman', Times, serif; 
+            color: black;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 210mm;
+            margin: 20px auto;
+            min-height: 297mm;
+            outline: none;
+        }
+        @media (max-width: 768px) {
+            .report-page { padding: 20px; width: 100%; margin: 0; box-shadow: none; }
+        }
+
+        /* Helpers */
+        .report-title { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 2rem; text-decoration: underline; }
+        .report-section { margin-bottom: 1.5rem; }
+        .report-h2 { font-size: 14pt; font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 0.75rem; padding-bottom: 0.25rem; text-transform: uppercase; }
+        .report-h3 { font-size: 12pt; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .report-row { margin-bottom: 0.3rem; }
+        .report-label { font-weight: bold; }
+        .report-ul { margin: 0; padding-left: 1.5rem; }
+        .report-warning { color: red; font-weight: bold; margin-top: 0.5rem; border: 1px solid red; padding: 0.5rem; display: inline-block; }
+        
+        .hidden { display: none; }
+        .no-select { user-select: none; -webkit-user-select: none; }
+
+        /* Print Styles */
+        @media print {
+            #app-container { display: none !important; }
+            .modal-overlay { position: static !important; background: white !important; padding: 0 !important; display: block !important; height: auto !important; }
+            .modal { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; height: auto !important; margin: 0 !important; max-height: none !important; }
+            .modal-header { display: none !important; }
+            .modal-body { padding: 0 !important; margin: 0 !important; overflow: visible !important; background-color: white !important; }
+            .report-page { box-shadow: none !important; padding: 0 !important; margin: 0 !important; min-height: auto !important; width: 100% !important; max-width: 100% !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container"></div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Global Error Handler for Safety
+            window.onerror = function(message, source, lineno, colno, error) {
+                console.error(error);
+                try {
+                    const container = document.getElementById('toast-container');
+                    if (container) {
+                        const toast = document.createElement('div');
+                        toast.className = 'toast error';
+                        toast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>Error: ${message}</span>`;
+                        container.appendChild(toast);
+                        setTimeout(() => toast.remove(), 5000);
+                    }
+                } catch(e) {}
+                return true;
+            };
+
+            // Prevent default touch behavior on specific elements to reduce glitches
+            document.addEventListener('touchstart', function(event) {
+                if (event.touches.length > 1) {
+                    event.preventDefault(); // Prevent pinch zoom
+                }
+            }, { passive: false });
+
+            // ============================================================================
+            // DATA & STATE
+            // ============================================================================
+            const suggestions = {
+                moi: ["Fall on outstretched hand (FOOSH)", "Twisting injury", "Direct blow/trauma", "Repetitive overuse", "Motor vehicle accident (MVA)", "Lifting heavy object", "Sudden acceleration/deceleration", "Non-specific/Insidious onset", "Post-surgical"],
+                aggravating: ["Sitting > 20 mins", "Standing prolonged", "Walking > 1km", "Stairs (ascending)", "Stairs (descending)", "Overhead reaching", "Bending forward", "Lifting", "Driving", "Sleeping on affected side", "Running", "Squatting"],
+                easing: ["Rest", "Ice", "Heat pack", "Medication (NSAIDs)", "Lying supine", "Walking", "Changing position", "Gentle movement", "Massage", "Elevation"],
+                history: ["Previous similar injury", "Chronic episodes", "Nil significant", "Hypertension", "Diabetes", "Osteoarthritis", "Previous surgery"],
+                social: ["Office worker (sedentary)", "Manual laborer", "Retired", "Active lifestyle", "Play sports (weekend warrior)", "High-level athlete", "Lives alone", "Two-story house"],
+                generalHealth: ["Good", "Fair", "Poor", "High stress levels", "Fatigued", "Smoker"],
+                posture: ["Lordotic L-spine", "Kyphotic T-spine", "Forward head posture", "Scoliosis observed", "Neutral spine", "Pelvic tilt (Anterior)", "Pelvic tilt (Posterior)"],
+                gait: ["Antalgic", "Normal heel-toe", "Trendelenburg", "Reduced stance phase", "Use of aid (stick/crutch)", "Slow cadence"],
+                rom: ["Full active ROM", "Restricted end-range", "Painful arc", "LOM 25%", "LOM 50%", "Empty end-feel", "Hard end-feel", "Springy block"],
+                palpation: ["Tenderness", "Increased warmth", "Swelling/Effusion", "Muscle spasm/hypertonicity", "Trigger points active", "Crepitus", "Bony tenderness", "Thickening"],
+                specialTests: ["Negative", "Positive", "Empty Can: +ve", "Hawkins-Kennedy: +ve", "Lachman's: +ve", "McMurray's: +ve", "Straight Leg Raise: +ve", "Slump Test: +ve", "Tinel's: +ve", "Phalen's: +ve"],
+                movement: ["Squat mechanics poor", "Single leg balance reduced", "Lunge pattern dysfunctional", "Sit to stand difficulties", "Overhead lift compensation"],
+                goals: ["Pain reduction", "Return to sport", "Return to work", "Improve range of motion", "Increase strength", "Improve sleep quality"],
+                plan: ["Manual therapy", "Soft tissue release", "Joint mobilization (Gr III/IV)", "Exercise prescription", "Education & Advice", "Taping/Strapping", "Referral to GP", "Review in 1 week"],
+                outcomeMeasures: ["Oswestry Disability Index (ODI)", "Neck Disability Index (NDI)", "Lower Extremity Functional Scale (LEFS)", "DASH Score", "SPADI", "PSFS (Patient Specific Functional Scale)", "Roland-Morris Disability Questionnaire", "Berg Balance Scale", "TUG Test"],
+                reflexes: ["Biceps (C5/6) Normal (2+)", "Triceps (C7/8) Normal (2+)", "Brachioradialis (C5/6) Normal (2+)", "Patellar (L3/4) Normal (2+)", "Achilles (S1/2) Normal (2+)", "Hyporeflexia (1+)", "Hyperreflexia (3+)", "Clonus Present", "Absent (0)"],
+                dermatomes: ["Intact light touch global", "Reduced sensation L4", "Reduced sensation L5", "Reduced sensation S1", "Reduced sensation C6", "Reduced sensation C7", "Reduced sensation C8", "Paraesthesia in distrubution", "Anaesthesia"],
+                myotomes: ["Intact power (5/5) global", "Weakness C5 (Deltoid)", "Weakness C6 (Wrist Ext)", "Weakness C7 (Triceps)", "Weakness L4 (Quads)", "Weakness L5 (EHL)", "Weakness S1 (Plant. Flex)", "Fatiguable weakness"]
+            };
+
+            const physioSymbols = ['↑', '↓', '→', '2°', '∆', 'L', 'R', 'c/o', 'Rx', 'Hx', '+ve', '-ve'];
+
+            const jointSpecialTests = {
+                'cervical': ['Spurling\'s', 'Distraction', 'Quadrant', 'ULTT'],
+                'thoracic': ['Slump', 'Rotation with Overpressure'],
+                'lumbar': ['SLR', 'Slump', 'Quadrant', 'Femoral Nerve Stretch'],
+                'shoulder': ['Neer\'s', 'Hawkins-Kennedy', 'Empty Can', 'Drop Arm', 'Speed\'s', 'O\'Brien\'s', 'Apprehension'],
+                'elbowWrist': ['Cozen\'s', 'Mill\'s', 'Tinel\'s', 'Phalen\'s', 'Finkelstein\'s'],
+                'hip': ['FABER', 'FADIR', 'Thomas', 'Trendelenburg', 'Scour'],
+                'knee': ['Lachman\'s', 'Ant. Drawer', 'Post. Drawer', 'McMurray\'s', 'Valgus Stress', 'Varus Stress', 'Patellar Grind'],
+                'ankleFoot': ['Ant. Drawer', 'Talar Tilt', 'Thompson\'s', 'Squeeze Test', 'Windlass']
+            };
+
+            const redFlagsList = ["Cauda Equina Symptoms (Bowel/Bladder)", "Unexplained Weight Loss", "Night Pain (Unrelenting)", "History of Cancer", "Systemic Unwellness (Fever/Chills)", "Severe/Progressive Neuro Deficit", "Trauma (Fracture Risk)"];
+
+            const bodyPartsConfig = {
+                anterior: [
+                    { id: 'Head', d: 'M100,20 C110,20 120,30 120,40 C120,50 110,60 100,60 C90,60 80,50 80,40 C80,30 90,20 100,20 Z' },
+                    { id: 'Neck', d: 'M90,60 L110,60 L110,70 L90,70 Z' },
+                    { id: 'Torso', d: 'M70,70 L130,70 L120,180 L80,180 Z' },
+                    { id: 'L.Shoulder', d: 'M70,70 L40,90 L50,110 L70,90 Z' },
+                    { id: 'R.Shoulder', d: 'M130,70 L160,90 L150,110 L130,90 Z' },
+                    { id: 'L.Arm', d: 'M40,90 L20,150 L35,155 L50,100 Z' },
+                    { id: 'R.Arm', d: 'M160,90 L180,150 L165,155 L150,100 Z' },
+                    { id: 'Hips', d: 'M80,180 L120,180 L125,210 L75,210 Z' },
+                    { id: 'L.Leg', d: 'M75,210 L60,300 L85,300 L95,210 Z' },
+                    { id: 'R.Leg', d: 'M125,210 L140,300 L115,300 L105,210 Z' },
+                    { id: 'L.Foot', d: 'M60,300 L50,320 L80,320 L85,300 Z' },
+                    { id: 'R.Foot', d: 'M140,300 L150,320 L120,320 L115,300 Z' }
+                ],
+                posterior: [
+                    { id: 'Head (Back)', d: 'M100,20 C110,20 120,30 120,40 C120,50 110,60 100,60 C90,60 80,50 80,40 C80,30 90,20 100,20 Z' },
+                    { id: 'Neck (Back)', d: 'M90,60 L110,60 L110,70 L90,70 Z' },
+                    { id: 'Upper Back', d: 'M70,70 L130,70 L125,130 L75,130 Z' },
+                    { id: 'Lower Back', d: 'M75,130 L125,130 L120,180 L80,180 Z' },
+                    { id: 'L.Shoulder (Back)', d: 'M70,70 L40,90 L50,110 L70,90 Z' },
+                    { id: 'R.Shoulder (Back)', d: 'M130,70 L160,90 L150,110 L130,90 Z' },
+                    { id: 'L.Arm (Back)', d: 'M40,90 L20,150 L35,155 L50,100 Z' },
+                    { id: 'R.Arm (Back)', d: 'M160,90 L180,150 L165,155 L150,100 Z' },
+                    { id: 'Glutes', d: 'M80,180 L120,180 L125,210 L75,210 Z' },
+                    { id: 'L.Hamstring', d: 'M75,210 L60,300 L85,300 L95,210 Z' },
+                    { id: 'R.Hamstring', d: 'M125,210 L140,300 L115,300 L105,210 Z' },
+                    { id: 'L.Calf', d: 'M60,300 L55,380 L75,380 L85,300 Z' },
+                    { id: 'R.Calf', d: 'M140,300 L145,380 L125,380 L115,300 Z' }
+                ]
+            };
+
+            const romData = [
+                { joint: "Cervical", move: "Flexion/Ext", normal: "45° / 45°" },
+                { joint: "Cervical", move: "Rotation", normal: "80°" },
+                { joint: "Cervical", move: "Side Flexion", normal: "45°" },
+                { joint: "Shoulder", move: "Flexion/Abd", normal: "180°" },
+                { joint: "Shoulder", move: "Ext Rotation", normal: "90°" },
+                { joint: "Elbow", move: "Flexion", normal: "145°" },
+                { joint: "Hip", move: "Flexion", normal: "120°" },
+                { joint: "Hip", move: "Extension", normal: "30°" },
+                { joint: "Knee", move: "Flexion", normal: "135°" },
+                { joint: "Ankle", move: "Dorsiflexion", normal: "20°" },
+                { joint: "Ankle", move: "Plantarflexion", normal: "50°" }
+            ];
+
+            const exerciseLibrary = {
+                'Strengthening': ['Squats (3x10)', 'Lunges (3x10)', 'Calf Raises (3x15)', 'Glute Bridges (3x12)', 'Clamshells (3x15)', 'Scapular Retraction (3x15)', 'Isometric Quads (10x10s)'],
+                'Mobility': ['Cat-Camel', 'Thoracic Rotation', 'Hamstring Stretch', 'Calf Stretch', 'Pec Stretch', 'Neck Retraction', 'Knee to Chest'],
+                'Balance': ['Single Leg Stance', 'Tandem Stance', 'Star Excursion', 'Wobble Board'],
+                'Neural': ['Slump Slider', 'Median Nerve Glide', 'Sciatic Flossing']
+            };
+
+            const initialAppState = {
+                id: null,
+                patient: { name: '', dob: '', address: '', phone: '', assessmentDate: new Date().toISOString().split('T')[0], clinician: 'Dr. Smith', clinic: 'City Physio Clinic' },
+                subjective: { moi: '', currentHistory: '', bodyChart: [], aggravatingFactors: '', easingFactors: '', pastHistory: '', socialHistory: '', meds: '', generalHealth: '', vas: 0, redFlags: [] },
+                observation: { posture: '', gait: '', activeArom: '', passiveProm: '', resistedIsometric: '', palpation: '', specialTests: '' },
+                functional: { functionalMovement: '', outcomeMeasures: '' },
+                neuro: { reflexes: '', dermatomes: '', myotomes: '' },
+                joints: {
+                    cervical: { rom: { flexion: '', extension: '', rotation: '', sideFlexion: '' }, palpation: '', specialTests: '' },
+                    thoracic: { rom: { flexion: '', extension: '', rotation: '', sideFlexion: '' }, palpation: '', specialTests: '' },
+                    lumbar: { rom: { flexion: '', extension: '', rotation: '', sideFlexion: '' }, palpation: '', specialTests: '' },
+                    shoulder: { rom: { flexion: '', extension: '', abduction: '', adduction: '', intRotation: '', extRotation: '' }, palpation: '', specialTests: '' },
+                    elbowWrist: { rom: { flexion: '', extension: '' }, palpation: '', specialTests: '' },
+                    hip: { rom: { flexion: '', extension: '', abduction: '', adduction: '', intRotation: '', extRotation: '' }, palpation: '', specialTests: '' },
+                    knee: { rom: { flexion: '', extension: '' }, palpation: '', specialTests: '' },
+                    ankleFoot: { rom: { flexion: '', extension: '' }, palpation: '', specialTests: '' },
+                },
+                plan: { problemList: '', goals: '', treatmentPlan: '', nextAppointment: '' }
+            };
+
+            const navItems = [
+                { id: 'dashboard', label: 'Subjective', icon: 'fa-user' },
+                { id: 'observation', label: 'Objective', icon: 'fa-eye' },
+                { id: 'functional', label: 'Functional', icon: 'fa-person-running' },
+                { id: 'neuro', label: 'Neurological', icon: 'fa-brain' },
+                { id: 'c-spine', label: 'C-Spine', icon: 'fa-bone' },
+                { id: 't-spine', label: 'T-Spine', icon: 'fa-bone' },
+                { id: 'l-spine', label: 'L-Spine', icon: 'fa-bone' },
+                { id: 'shoulder', label: 'Shoulder', icon: 'fa-bone' },
+                { id: 'elbow', label: 'Elbow/Wrist', icon: 'fa-bone' },
+                { id: 'hip', label: 'Hip', icon: 'fa-bone' },
+                { id: 'knee', label: 'Knee', icon: 'fa-bone' },
+                { id: 'ankle', label: 'Ankle/Foot', icon: 'fa-bone' },
+                { id: 'tools', label: 'Tools', icon: 'fa-goniometer' },
+                { id: 'plan', label: 'Plan', icon: 'fa-clipboard-list' },
+            ];
+
+            let state = JSON.parse(JSON.stringify(initialAppState)); // Deep copy
+            let activeSection = 'dashboard';
+            let isSidebarOpen = false;
+            let bodyChartView = 'anterior';
+            let activeSensation = 'pain'; // 'pain', 'numbness', 'stiffness'
+            let activeExerciseCat = 'Strengthening';
+            let stopwatchInterval;
+            let stopwatchTime = 0;
+            let unsavedChanges = false;
+
+            // ============================================================================
+            // UTILS & SERVICES
+            // ============================================================================
+            function deepMerge(target, source) {
+                if (typeof target !== 'object' || target === null) return source;
+                if (typeof source !== 'object' || source === null) return target;
+                const output = Array.isArray(target) ? [] : {};
+                for (const key in target) output[key] = target[key];
+                for (const key in source) {
+                    if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
+                        if (!(key in target)) Object.assign(output, { [key]: source[key] });
+                        else output[key] = deepMerge(target[key], source[key]);
+                    } else {
+                        Object.assign(output, { [key]: source[key] });
+                    }
+                }
+                return output;
+            }
+
+            function deepSet(obj, path, value) {
+                const keys = path.split('.');
+                let current = obj;
+                for (let i = 0; i < keys.length - 1; i++) {
+                    current = current[keys[i]];
+                }
+                current[keys[keys.length - 1]] = value;
+            }
+
+            function handleStateChange(path, value) {
+                deepSet(state, path, value);
+                localStorage.setItem('smartPhysioState', JSON.stringify(state));
+                if (path === 'subjective.vas') {
+                    const display = document.getElementById('vas-display-value');
+                    if(display) display.textContent = value;
+                    updateVasFaces(value);
+                }
+                unsavedChanges = true;
+                updateSaveButtonState();
+            }
+
+            function updateSaveButtonState() {
+                const saveBtn = document.getElementById('btn-save-main');
+                if(saveBtn) {
+                    if(unsavedChanges) saveBtn.classList.add('btn-needs-save');
+                    else saveBtn.classList.remove('btn-needs-save');
+                }
+            }
+
+            function showToast(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            function getSavedPatients() {
+                return JSON.parse(localStorage.getItem('smartPhysioPatients') || '[]');
+            }
+            
+            function savePatientToLibrary() {
+                if(!state.patient.name) {
+                    showToast('Please enter a patient name first.', 'error');
+                    return;
+                }
+                const patients = getSavedPatients();
+                if(!state.id) state.id = Date.now().toString(); // Generate ID if new
+                
+                const index = patients.findIndex(p => p.id === state.id);
+                if(index >= 0) patients[index] = state; // Update existing
+                else patients.push(state); // Add new
+                
+                localStorage.setItem('smartPhysioPatients', JSON.stringify(patients));
+                localStorage.setItem('smartPhysioState', JSON.stringify(state));
+                unsavedChanges = false;
+                updateSaveButtonState();
+                showToast('Patient profile saved to list.');
+            }
+
+            function loadPatientFromLibrary(id) {
+                const patients = getSavedPatients();
+                const patient = patients.find(p => p.id === id);
+                if(patient) {
+                    // Merge loaded patient with initial state to ensure no missing fields
+                    state = deepMerge(JSON.parse(JSON.stringify(initialAppState)), patient);
+                    localStorage.setItem('smartPhysioState', JSON.stringify(state));
+                    unsavedChanges = false;
+                    updateSaveButtonState();
+                    activeSection = 'dashboard';
+                    const overlay = document.querySelector('.modal-overlay');
+                    if(overlay) overlay.remove();
+                    renderApp(); // Full Re-render
+                    showToast(`Loaded ${patient.patient.name}`);
+                }
+            }
+
+            function deletePatient(id) {
+                if(!confirm('Are you sure you want to delete this patient profile?')) return;
+                const patients = getSavedPatients().filter(p => p.id !== id);
+                localStorage.setItem('smartPhysioPatients', JSON.stringify(patients));
+                
+                // Refresh list if modal open
+                const list = document.getElementById('patient-list-content');
+                if(list) list.innerHTML = renderPatientListItems();
+                showToast('Patient profile deleted.');
+            }
+
+            function quickFill(sectionPrefix, value = 'NAD') {
+                const inputs = document.querySelectorAll(`[id^="${sectionPrefix}"]`);
+                let count = 0;
+                inputs.forEach(input => {
+                    if (input.value.trim() === '') {
+                        input.value = value;
+                        input.dispatchEvent(new Event('input')); // Trigger state save
+                        // Auto resize textareas
+                        if(input.tagName === 'TEXTAREA') {
+                            input.style.height = 'auto';
+                            input.style.height = (input.scrollHeight) + 'px';
+                        }
+                        count++;
+                    }
+                });
+                if(count > 0) showToast(`Filled ${count} fields with "${value}"`);
+                else showToast('All fields already filled', 'error');
+            }
+            
+            function updateVasFaces(val) {
+                const faces = document.querySelectorAll('.vas-face');
+                if(!faces.length) return;
+                faces.forEach(f => f.classList.remove('active'));
+                
+                // Simple logic: 0-3 Happy, 4-6 Neutral, 7-10 Sad
+                if (val <= 3) faces[0].classList.add('active');
+                else if (val <= 6) faces[1].classList.add('active');
+                else faces[2].classList.add('active');
+            }
+
+            function formatDate(dateString) {
+                if(!dateString) return 'N/A';
+                const d = new Date(dateString);
+                // Handle simple date string YYYY-MM-DD
+                const parts = dateString.split('-');
+                if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                return d.toLocaleDateString();
+            }
+            
+            // HTML Report Generation Helpers
+            function createReportRow(label, value) {
+                if (!value || value.trim() === '' || value === 'N/A') return '';
+                return `<div class="report-row"><span class="report-label">${label}:</span> ${value}</div>`;
+            }
+            
+            function createReportSection(title, content) {
+                if (!content) return '';
+                return `<div class="report-section"><div class="report-h2">${title}</div>${content}</div>`;
+            }
+
+            function formatJointHTML(name, joint) {
+                if (!joint || !joint.rom) return '';
+
+                const romEntries = Object.entries(joint.rom).map(([move, val]) => val ? `<li><strong>${move.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}:</strong> ${val}</li>` : null).filter(Boolean);
+                if (romEntries.length === 0 && !joint.palpation && !joint.specialTests) return '';
+                
+                let content = '';
+                if (romEntries.length > 0) content += `<div class="report-h3">Range of Motion</div><ul class="report-ul">${romEntries.join('')}</ul>`;
+                if (joint.palpation) content += `<div class="report-row"><span class="report-label">Palpation:</span> ${joint.palpation}</div>`;
+                if (joint.specialTests) content += `<div class="report-row"><span class="report-label">Special Tests:</span> ${joint.specialTests}</div>`;
+                
+                return createReportSection(name, content);
+            }
+
+            function generateReportHTML(state) {
+                const { patient, subjective, observation, functional, neuro, joints, plan } = state;
+                
+                let html = `<div class="report-page" contenteditable="true" spellcheck="false">`;
+                html += `<div class="report-title">Physiotherapy Assessment Report</div>`;
+                
+                // Patient Details
+                let patientContent = 
+                    createReportRow('Name', patient.name) +
+                    createReportRow('DOB', formatDate(patient.dob)) +
+                    createReportRow('Address', patient.address) +
+                    createReportRow('Phone', patient.phone);
+                html += createReportSection('Patient Details', patientContent);
+                
+                // Clinic Details
+                let clinicContent = 
+                    createReportRow('Clinician', patient.clinician) +
+                    createReportRow('Clinic', patient.clinic) +
+                    createReportRow('Date of Assessment', formatDate(patient.assessmentDate));
+                html += createReportSection('Clinic Details', clinicContent);
+                
+                html += `<hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #ccc;">`;
+
+                // Parse Body Chart Data
+                let bodyChartText = "N/A";
+                if(subjective.bodyChart && subjective.bodyChart.length > 0) {
+                    if(typeof subjective.bodyChart[0] === 'string') {
+                        bodyChartText = subjective.bodyChart.join(', ');
+                    } else {
+                        bodyChartText = subjective.bodyChart.map(item => `${item.id} (${item.type.charAt(0).toUpperCase() + item.type.slice(1)})`).join(', ');
+                    }
+                }
+
+                // Subjective
+                let subjectiveContent = 
+                    createReportRow('MOI', subjective.moi) +
+                    createReportRow('History', subjective.currentHistory) +
+                    createReportRow('Body Chart', bodyChartText) +
+                    createReportRow('Aggravating', subjective.aggravatingFactors) +
+                    createReportRow('Easing', subjective.easingFactors) +
+                    createReportRow('VAS', `${subjective.vas}/10`) +
+                    createReportRow('Medical History', subjective.pastHistory) +
+                    createReportRow('Meds', subjective.meds) +
+                    createReportRow('Social', subjective.socialHistory) +
+                    createReportRow('General Health', subjective.generalHealth);
+                
+                if (subjective.redFlags && subjective.redFlags.length > 0) {
+                    subjectiveContent += `<div class="report-warning">RED FLAGS: ${subjective.redFlags.join(', ')}</div>`;
+                }
+
+                html += createReportSection('Subjective Assessment', subjectiveContent);
+
+                // Objective
+                let objectiveContent = 
+                    createReportRow('Posture', observation.posture) +
+                    createReportRow('Gait', observation.gait) +
+                    createReportRow('Active ROM', observation.activeArom) +
+                    createReportRow('Passive ROM', observation.passiveProm) +
+                    createReportRow('Resisted', observation.resistedIsometric) +
+                    createReportRow('Palpation', observation.palpation) +
+                    createReportRow('Special Tests', observation.specialTests);
+                html += createReportSection('Objective Assessment', objectiveContent);
+
+                // Joints
+                html += formatJointHTML('Cervical Spine', joints.cervical);
+                html += formatJointHTML('Thoracic Spine', joints.thoracic);
+                html += formatJointHTML('Lumbar Spine', joints.lumbar);
+                html += formatJointHTML('Shoulder', joints.shoulder);
+                html += formatJointHTML('Elbow/Wrist', joints.elbowWrist);
+                html += formatJointHTML('Hip', joints.hip);
+                html += formatJointHTML('Knee', joints.knee);
+                html += formatJointHTML('Ankle/Foot', joints.ankleFoot);
+
+                // Functional
+                let functionalContent = 
+                    createReportRow('Movement', functional.functionalMovement) +
+                    createReportRow('Measures', functional.outcomeMeasures);
+                html += createReportSection('Functional Tests', functionalContent);
+
+                // Neuro
+                let neuroContent = 
+                    createReportRow('Reflexes', neuro.reflexes) +
+                    createReportRow('Dermatomes', neuro.dermatomes) +
+                    createReportRow('Myotomes', neuro.myotomes);
+                html += createReportSection('Neurological Assessment', neuroContent);
+                
+                html += `<hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #ccc;">`;
+
+                // Plan
+                let planContent = 
+                    createReportRow('Problem List', plan.problemList) +
+                    createReportRow('Goals', plan.goals) +
+                    createReportRow('Treatment Plan', plan.treatmentPlan) +
+                    createReportRow('Next Appointment', formatDate(plan.nextAppointment));
+                html += createReportSection('Clinical Impression & Plan', planContent);
+                
+                html += `</div>`;
+                return html;
+            }
+
+            // ============================================================================
+            // DOM ELEMENT CREATION
+            // ============================================================================
+            function createEl(tag, classes = [], children = [], attributes = {}) {
+                const el = document.createElement(tag);
+                if (classes.length) el.className = classes.join(' ');
+                if (typeof children === 'string') el.innerHTML = children;
+                else children.forEach(child => el.appendChild(child));
+                Object.entries(attributes).forEach(([key, value]) => {
+                    if (key.startsWith('on') && typeof value === 'function') {
+                        el[key] = value;
+                    } else {
+                        el.setAttribute(key, value);
+                    }
+                });
+                return el;
+            }
+
+            function createTooltip(text) {
+                return createEl('div', ['tooltip-container'], [
+                    createEl('i', ['fas', 'fa-info-circle', 'tooltip-icon']),
+                    createEl('div', ['tooltip-text'], text)
+                ]);
+            }
+            
+            function addDatalist(id, items) {
+                if (!items) return null;
+                const datalistId = `${id}-list`;
+                if (document.getElementById(datalistId)) return datalistId;
+                
+                const datalist = createEl('datalist', [], [], { id: datalistId });
+                items.forEach(item => datalist.appendChild(createEl('option', [], [], { value: item })));
+                document.body.appendChild(datalist);
+                return datalistId;
+            }
+
+            function createSymbolToolbar(targetId) {
+                const toolbar = createEl('div', ['symbol-toolbar']);
+                physioSymbols.forEach(sym => {
+                    const btn = createEl('button', ['symbol-btn'], sym, { type: 'button' });
+                    // Use touchdown for faster response on iPad
+                    const insertSymbol = (e) => {
+                        e.preventDefault();
+                        const el = document.getElementById(targetId);
+                        if(el) {
+                            const start = el.selectionStart;
+                            const end = el.selectionEnd;
+                            const text = el.value;
+                            const newText = text.substring(0, start) + sym + text.substring(end);
+                            el.value = newText;
+                            el.selectionStart = el.selectionEnd = start + sym.length;
+                            el.focus();
+                            el.dispatchEvent(new Event('input'));
+                        }
+                    };
+                    btn.addEventListener('click', insertSymbol);
+                    toolbar.appendChild(btn);
+                });
+                return toolbar;
+            }
+
+            function createInput({ label, id, tooltip, suggestionList, type = 'text', ...attrs }) {
+                const labelContainer = createEl('div', ['form-label-container']);
+                const leftLabel = createEl('div', ['form-label-left'], [createEl('label', ['form-label'], label, { for: id })]);
+                if (tooltip) leftLabel.appendChild(createTooltip(tooltip));
+                labelContainer.appendChild(leftLabel);
+                
+                const inputAttrs = { id, type, ...attrs };
+                if (suggestionList) inputAttrs.list = addDatalist(id, suggestionList);
+                
+                // iPad keyboard optimiztion
+                if (type === 'number') inputAttrs.inputmode = 'decimal';
+                if (type === 'tel') inputAttrs.inputmode = 'tel';
+
+                const input = createEl('input', ['input'], [], inputAttrs);
+                input.addEventListener('input', (e) => handleStateChange(id, e.target.value));
+                return createEl('div', ['form-group'], [labelContainer, input]);
+            }
+
+            function createTextarea({ label, id, tooltip, value, suggestionList, ...attrs }) {
+                const labelContainer = createEl('div', ['form-label-container']);
+                const leftLabel = createEl('div', ['form-label-left'], [createEl('label', ['form-label'], label, { for: id })]);
+                if (tooltip) leftLabel.appendChild(createTooltip(tooltip));
+                labelContainer.appendChild(leftLabel);
+                
+                const toolbar = createSymbolToolbar(id);
+
+                let inputEl;
+                if (suggestionList) {
+                    const listId = addDatalist(id, suggestionList);
+                    inputEl = createEl('input', ['input'], [], { id, list: listId, value: value || '', ...attrs });
+                } else {
+                    inputEl = createEl('textarea', ['textarea'], value, { id, ...attrs });
+                    const autoResize = () => {
+                        inputEl.style.height = 'auto';
+                        inputEl.style.height = (inputEl.scrollHeight) + 'px';
+                    };
+                    inputEl.addEventListener('input', autoResize);
+                    setTimeout(autoResize, 0);
+                }
+                
+                inputEl.addEventListener('input', (e) => handleStateChange(id, e.target.value));
+                return createEl('div', ['form-group'], [labelContainer, toolbar, inputEl]);
+            }
+
+            function createCard(title, icon, children, actions = null) {
+                const headerContent = [
+                    createEl('div', ['card-header-left'], [createEl('i', ['fas', icon]), document.createTextNode(title)])
+                ];
+                if (actions) { headerContent.push(actions); }
+                return createEl('div', ['card'], [
+                    createEl('header', ['card-header'], headerContent),
+                    createEl('div', ['card-body'], children)
+                ]);
+            }
+
+            function createQuickFillBtn(sectionPath) {
+                const btn = createEl('button', ['btn', 'btn-sm'], 'Fill NAD');
+                btn.title = "Fill empty fields with 'NAD'";
+                btn.onclick = () => quickFill(sectionPath);
+                return btn;
+            }
+
+            function createBtn(text, icon, onClick, isPrimary = false, id = null) {
+                const btn = createEl('button', ['btn'], `<i class="fas ${icon}"></i> <span>${text}</span>`);
+                if(id) btn.id = id;
+                if(isPrimary) btn.classList.add('btn-primary');
+                btn.addEventListener('click', onClick);
+                return btn;
+            }
+
+            function createNavButtons(currentSectionId) {
+                const currentIndex = navItems.findIndex(item => item.id === currentSectionId);
+                const prevItem = currentIndex > 0 ? navItems[currentIndex - 1] : null;
+                const nextItem = currentIndex < navItems.length - 1 ? navItems[currentIndex + 1] : null;
+
+                const container = createEl('div', ['nav-buttons-container']);
+                
+                if(prevItem) {
+                    const prevBtn = createBtn(prevItem.label, 'fa-arrow-left', () => { activeSection = prevItem.id; renderApp(); });
+                    // Swap icon order for prev
+                    prevBtn.innerHTML = `<i class="fas fa-arrow-left"></i> <span>${prevItem.label}</span>`;
+                    container.appendChild(prevBtn);
+                } else { container.appendChild(createEl('div')); }
+
+                if(nextItem) {
+                    const nextBtn = createBtn(nextItem.label, 'fa-arrow-right', () => { activeSection = nextItem.id; renderApp(); }, true);
+                    // Swap icon order for next
+                    nextBtn.innerHTML = `<span>${nextItem.label}</span> <i class="fas fa-arrow-right"></i>`;
+                    container.appendChild(nextBtn);
+                }
+                return container;
+            }
+
+            function renderPatientListItems() {
+                const patients = getSavedPatients();
+                if(patients.length === 0) return '<div style="padding:2rem; text-align:center; color:var(--text-muted);">No saved patients found.</div>';
+                
+                return patients.map(p => `
+                    <div class="patient-item">
+                        <div class="patient-info">
+                            <span class="patient-name">${p.patient.name || 'Unnamed'}</span>
+                            <span class="patient-date">Updated: ${formatDate(p.patient.assessmentDate)}</span>
+                        </div>
+                        <div class="patient-actions">
+                            <button class="btn btn-sm btn-primary" onclick="loadPatient('${p.id}')">Load</button>
+                            <button class="btn btn-sm" onclick="deletePatient('${p.id}')" style="color:var(--danger); border-color:var(--danger);"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Expose for inline handlers
+            window.loadPatient = loadPatientFromLibrary;
+            window.deletePatient = deletePatient;
+
+            // ============================================================================
+            // RENDER FUNCTIONS
+            // ============================================================================
+            function renderSection() {
+                const contentArea = document.querySelector('.content-area .container');
+                if (!contentArea) return;
+                
+                if(stopwatchInterval) {
+                    clearInterval(stopwatchInterval);
+                    stopwatchInterval = null;
+                    stopwatchTime = 0;
+                }
+
+                if(document.querySelector('.content-area')) {
+                     document.querySelector('.content-area').scrollTop = 0;
+                }
+                
+                contentArea.innerHTML = '';
+                
+                const renderJointSection = (title, jointState, basePath, moves, palpTip, testsTip, jointKey) => {
+                    const romInputs = moves.map(move => {
+                        const label = move.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+                        return createInput({ 
+                            label, 
+                            id: `${basePath}.rom.${move}`, 
+                            value: jointState.rom[move] || '',
+                            suggestionList: suggestions.rom 
+                        });
+                    });
+                    
+                    const actions = createQuickFillBtn(basePath);
+                    
+                    let specialTestsDiv = createEl('div', ['special-tests-list']);
+                    if (jointKey && jointSpecialTests[jointKey]) {
+                        jointSpecialTests[jointKey].forEach(test => {
+                            const chip = createEl('span', ['test-chip'], test);
+                            chip.onclick = () => {
+                                const ta = document.getElementById(`${basePath}.specialTests`);
+                                const current = ta.value;
+                                const newVal = current.trim() ? `${current}, ${test}` : test;
+                                ta.value = newVal;
+                                ta.dispatchEvent(new Event('input'));
+                                showToast(`Added ${test}`);
+                            };
+                            specialTestsDiv.appendChild(chip);
+                        });
+                    }
+
+                    return createCard(title, 'fa-bone', [
+                        createEl('h4', [], 'Range of Motion'),
+                        createEl('div', ['grid', 'grid-cols-2'], romInputs),
+                        createEl('hr'),
+                        createTextarea({ label: 'Palpation', id: `${basePath}.palpation`, value: jointState.palpation, tooltip: palpTip, suggestionList: suggestions.palpation }),
+                        createTextarea({ label: 'Special Tests', id: `${basePath}.specialTests`, value: jointState.specialTests, tooltip: testsTip, suggestionList: suggestions.specialTests }),
+                        createEl('div', [], [createEl('small', [], 'Quick Add Tests:'), specialTestsDiv], { style: 'margin-top:0.5rem;' })
+                    ], actions);
+                };
+                
+                switch (activeSection) {
+                    case 'dashboard':
+                        // ... Body Chart Logic ...
+                        const { patient, subjective } = state;
+                        const bodyDiagramContainer = createEl('div', ['body-diagram']);
+                        const updateBodyDiagram = () => {
+                            const selectedAreas = state.subjective.bodyChart;
+                            const ns = 'http://www.w3.org/2000/svg';
+                            const svg = document.createElementNS(ns, 'svg');
+                            svg.setAttribute('viewBox', '0 0 200 400');
+                            svg.classList.add('body-diagram-svg');
+                            
+                            const parts = bodyPartsConfig[bodyChartView];
+                            parts.forEach(part => {
+                                const path = document.createElementNS(ns, 'path');
+                                path.setAttribute('d', part.d);
+                                path.classList.add('body-part');
+                                
+                                let isActive = false;
+                                let type = null;
+                                if(selectedAreas && selectedAreas.length > 0) {
+                                    if(typeof selectedAreas[0] === 'string') {
+                                        isActive = selectedAreas.includes(part.id);
+                                    } else {
+                                        const found = selectedAreas.find(a => a.id === part.id);
+                                        if(found) { isActive = true; type = found.type; }
+                                    }
+                                }
+
+                                if (isActive) {
+                                    if(type) path.classList.add(`selected-${type}`);
+                                    else path.classList.add('selected-pain');
+                                }
+
+                                // Use both click and touchend for responsiveness, prevent double firing
+                                const togglePart = (e) => {
+                                    e.preventDefault(); // Stop double taps on mobile
+                                    let newBodyChart = [...selectedAreas];
+                                    if(newBodyChart.length > 0 && typeof newBodyChart[0] === 'string') {
+                                        newBodyChart = newBodyChart.map(id => ({ id, type: 'pain' }));
+                                    }
+                                    const existingIndex = newBodyChart.findIndex(a => a.id === part.id);
+                                    if (existingIndex >= 0) {
+                                        if (newBodyChart[existingIndex].type === activeSensation) {
+                                            newBodyChart.splice(existingIndex, 1);
+                                        } else {
+                                            newBodyChart[existingIndex].type = activeSensation;
+                                        }
+                                    } else {
+                                        newBodyChart.push({ id: part.id, type: activeSensation });
+                                    }
+                                    handleStateChange('subjective.bodyChart', newBodyChart);
+                                    updateBodyDiagram();
+                                };
+                                
+                                path.addEventListener('click', togglePart);
+                                svg.appendChild(path);
+                            });
+
+                            bodyDiagramContainer.innerHTML = '';
+                            
+                            const sensationDiv = createEl('div', ['sensation-selector']);
+                            const sensations = [{ type: 'pain', color: 'red', title: 'Pain' }, { type: 'numbness', color: 'blue', title: 'Numbness' }, { type: 'stiffness', color: 'yellow', title: 'Stiffness' }];
+                            sensations.forEach(s => {
+                                const btn = createEl('div', ['sensation-btn', `sensation-${s.type}`]);
+                                btn.title = s.title;
+                                btn.innerHTML = s.title.charAt(0);
+                                if(activeSensation === s.type) btn.classList.add('active');
+                                btn.onclick = () => { activeSensation = s.type; updateBodyDiagram(); };
+                                sensationDiv.appendChild(btn);
+                            });
+
+                            const controlsDiv = createEl('div', [], [], { style: 'display:flex; justify-content:space-between; align-items:center; padding: 0 1rem; margin-bottom: 0.5rem;' });
+                            const toggleBtn = createEl('button', ['btn', 'btn-sm'], bodyChartView === 'anterior' ? 'Show Back' : 'Show Front');
+                            toggleBtn.onclick = () => { bodyChartView = bodyChartView === 'anterior' ? 'posterior' : 'anterior'; updateBodyDiagram(); };
+                            const clearBtn = createEl('button', ['btn-text'], 'Clear Chart', { onclick: () => { handleStateChange('subjective.bodyChart', []); updateBodyDiagram(); showToast('Body chart cleared'); }});
+                            controlsDiv.append(toggleBtn, clearBtn);
+
+                            bodyDiagramContainer.append(createEl('h4', [], 'Body Pain Map'), sensationDiv, controlsDiv, svg, createEl('div', ['body-diagram-info'], `<strong>Selected:</strong> ${selectedAreas.length} areas`));
+                        };
+                        updateBodyDiagram();
+
+                        const redFlagsContainer = createEl('div', ['red-flags-container'], [
+                            createEl('div', ['red-flags-title'], '<i class="fas fa-exclamation-triangle"></i> Red Flags Screening'),
+                            createEl('div', ['red-flags-grid'], redFlagsList.map(flag => {
+                                const wrapper = createEl('label', ['red-flag-item']);
+                                const input = createEl('input', [], [], { type: 'checkbox', checked: (subjective.redFlags || []).includes(flag) });
+                                input.onchange = (e) => {
+                                    let currentFlags = subjective.redFlags || [];
+                                    if(e.target.checked) currentFlags.push(flag);
+                                    else currentFlags = currentFlags.filter(f => f !== flag);
+                                    handleStateChange('subjective.redFlags', currentFlags);
+                                };
+                                wrapper.append(input, document.createTextNode(flag));
+                                return wrapper;
+                            }))
+                        ]);
+
+                        contentArea.append(
+                            createCard('Patient Details', 'fa-id-card', [
+                                createEl('div', ['grid', 'grid-cols-2'], [
+                                    createInput({ label: 'Name', id: 'patient.name', value: patient.name }),
+                                    createInput({ label: 'Date of Birth', id: 'patient.dob', type: 'date', value: patient.dob }),
+                                    createInput({ label: 'Assessment Date', id: 'patient.assessmentDate', type: 'date', value: patient.assessmentDate }),
+                                    createInput({ label: 'Phone', id: 'patient.phone', value: patient.phone, type: 'tel' }),
+                                    createInput({ label: 'Address', id: 'patient.address', value: patient.address }),
+                                ])
+                            ]),
+                            createCard('Subjective Assessment', 'fa-user', [
+                                createEl('div', ['grid', 'grid-cols-3'], [
+                                    createEl('div', ['col-span-2'], [
+                                        createTextarea({ label: 'Mechanism of Injury', id: 'subjective.moi', value: subjective.moi, tooltip: 'How did it happen?', suggestionList: suggestions.moi }),
+                                        createTextarea({ label: 'History of Present Complaint', id: 'subjective.currentHistory', value: subjective.currentHistory, tooltip: 'Detailed symptoms.' }),
+                                        createEl('div', ['grid', 'grid-cols-2'], [
+                                            createTextarea({ label: 'Aggravating Factors', id: 'subjective.aggravatingFactors', value: subjective.aggravatingFactors, tooltip: 'What makes it worse?', suggestionList: suggestions.aggravating }),
+                                            createTextarea({ label: 'Easing Factors', id: 'subjective.easingFactors', value: subjective.easingFactors, tooltip: 'What makes it better?', suggestionList: suggestions.easing }),
+                                        ]),
+                                        createEl('div', ['vas-container'], [
+                                            createEl('label', ['form-label'], 'Pain Intensity (VAS)'),
+                                            createEl('div', ['vas-faces'], [createEl('span', ['vas-face'], '😊'), createEl('span', ['vas-face'], '😐'), createEl('span', ['vas-face'], '😖')]),
+                                            createEl('div', ['vas-slider-wrapper'], [createEl('input', ['vas-slider'], [], { type: 'range', id: 'subjective.vas', min: '0', max: '10', value: subjective.vas, oninput: (e) => handleStateChange('subjective.vas', parseInt(e.target.value)) })]),
+                                            createEl('div', ['vas-labels'], [createEl('span', [], 'No Pain'), createEl('span', [], 'Moderate'), createEl('span', [], 'Severe')]),
+                                            createEl('div', ['vas-value-display'], [], { id: 'vas-display-value', innerHTML: subjective.vas })
+                                        ]),
+                                        redFlagsContainer
+                                    ]),
+                                    bodyDiagramContainer
+                                ]),
+                                createEl('hr'),
+                                createEl('div', ['grid', 'grid-cols-2'], [
+                                    createTextarea({ label: 'Past Medical History', id: 'subjective.pastHistory', value: subjective.pastHistory, suggestionList: suggestions.history }),
+                                    createTextarea({ label: 'Medications', id: 'subjective.meds', value: subjective.meds }),
+                                    createTextarea({ label: 'Social & Family History', id: 'subjective.socialHistory', value: subjective.socialHistory, suggestionList: suggestions.social }),
+                                    createTextarea({ label: 'General Health', id: 'subjective.generalHealth', value: subjective.generalHealth, suggestionList: suggestions.generalHealth }),
+                                ])
+                            ])
+                        );
+                        setTimeout(() => updateVasFaces(subjective.vas), 0);
+                        break;
+                    case 'observation': contentArea.appendChild(createCard('Objective Assessment', 'fa-eye', [
+                        createTextarea({ label: 'Posture', id: 'observation.posture', value: state.observation.posture, suggestionList: suggestions.posture }),
+                        createTextarea({ label: 'Gait', id: 'observation.gait', value: state.observation.gait, suggestionList: suggestions.gait }),
+                        createTextarea({ label: 'Active ROM', id: 'observation.activeArom', value: state.observation.activeArom, suggestionList: suggestions.rom }),
+                        createTextarea({ label: 'Passive PROM', id: 'observation.passiveProm', value: state.observation.passiveProm, suggestionList: suggestions.rom }),
+                        createTextarea({ label: 'Resisted Isometric', id: 'observation.resistedIsometric', value: state.observation.resistedIsometric }),
+                        createTextarea({ label: 'Palpation', id: 'observation.palpation', value: state.observation.palpation, suggestionList: suggestions.palpation }),
+                        createTextarea({ label: 'Special Tests', id: 'observation.specialTests', value: state.observation.specialTests, suggestionList: suggestions.specialTests })
+                    ], createQuickFillBtn('observation'))); break;
+                    case 'functional': contentArea.appendChild(createCard('Functional Tests', 'fa-person-running', [
+                         createTextarea({ label: 'Functional Movement', id: 'functional.functionalMovement', value: state.functional.functionalMovement, suggestionList: suggestions.movement }),
+                         createTextarea({ label: 'Outcome Measures', id: 'functional.outcomeMeasures', value: state.functional.outcomeMeasures, suggestionList: suggestions.outcomeMeasures })
+                    ], createQuickFillBtn('functional'))); break;
+                    case 'neuro': 
+                        const neuroContent = [
+                            createTextarea({ label: 'Reflexes', id: 'neuro.reflexes', value: state.neuro.reflexes, suggestionList: suggestions.reflexes }),
+                            createTextarea({ label: 'Dermatomes', id: 'neuro.dermatomes', value: state.neuro.dermatomes, suggestionList: suggestions.dermatomes }),
+                            createTextarea({ label: 'Myotomes', id: 'neuro.myotomes', value: state.neuro.myotomes, suggestionList: suggestions.myotomes })
+                        ];
+                        contentArea.appendChild(createCard('Neurological Assessment', 'fa-brain', neuroContent, createQuickFillBtn('neuro'))); 
+                    break;
+                    case 'c-spine': contentArea.appendChild(renderJointSection('Cervical Spine', state.joints.cervical, 'joints.cervical', ['flexion', 'extension', 'rotation', 'sideFlexion'], 'e.g., Tenderness over C5/6 facet joint.', 'e.g., Positive Spurling\'s test.', 'cervical')); break;
+                    case 't-spine': contentArea.appendChild(renderJointSection('Thoracic Spine', state.joints.thoracic, 'joints.thoracic', ['flexion', 'extension', 'rotation', 'sideFlexion'], 'e.g., Tenderness over T7 spinous process.', 'e.g., Rib spring test.', 'thoracic')); break;
+                    case 'l-spine': contentArea.appendChild(renderJointSection('Lumbar Spine', state.joints.lumbar, 'joints.lumbar', ['flexion', 'extension', 'rotation', 'sideFlexion'], 'e.g., Tenderness over L4/5 ligament.', 'e.g., Positive Slump test.', 'lumbar')); break;
+                    case 'shoulder': contentArea.appendChild(renderJointSection('Shoulder', state.joints.shoulder, 'joints.shoulder', ['flexion', 'extension', 'abduction', 'adduction', 'intRotation', 'extRotation'], 'e.g., Tenderness over acromion.', 'e.g., Positive Hawkins-Kennedy.', 'shoulder')); break;
+                    case 'elbow': contentArea.appendChild(renderJointSection('Elbow & Wrist', state.joints.elbowWrist, 'joints.elbowWrist', ['flexion', 'extension'], 'e.g., Tenderness over lateral epicondyle.', 'e.g., Positive Tinel\'s sign.', 'elbowWrist')); break;
+                    case 'hip': contentArea.appendChild(renderJointSection('Hip', state.joints.hip, 'joints.hip', ['flexion', 'extension', 'abduction', 'adduction', 'intRotation', 'extRotation'], 'e.g., Tenderness over greater trochanter.', 'e.g., Positive FABER test.', 'hip')); break;
+                    case 'knee': contentArea.appendChild(renderJointSection('Knee', state.joints.knee, 'joints.knee', ['flexion', 'extension'], 'e.g., Tenderness over medial joint line.', 'e.g., Positive Lachman\'s test.', 'knee')); break;
+                    case 'ankle': contentArea.appendChild(renderJointSection('Ankle & Foot', state.joints.ankleFoot, 'joints.ankleFoot', ['flexion', 'extension'], 'e.g., Tenderness over ATFL.', 'e.g., Positive Anterior Drawer.', 'ankleFoot')); break;
+                    case 'plan': 
+                        const exerciseContainer = createEl('div', ['exercise-prescriber'], [], { style: 'margin-bottom: 1.5rem; padding: 1.25rem; background: rgba(255,255,255,0.4); border: 1px solid var(--glass-border); border-radius: 0.75rem;' });
+                        const exerciseSearch = createInput({ 
+                            label: 'Search Exercises', id: 'exercise-search', placeholder: 'Filter exercises...',
+                            oninput: (e) => {
+                                const term = e.target.value.toLowerCase();
+                                document.querySelectorAll('.exercise-chip').forEach(chip => {
+                                    chip.style.display = chip.textContent.toLowerCase().includes(term) ? 'block' : 'none';
+                                });
+                            }
+                        });
+                        const catContainer = createEl('div', ['exercise-categories']);
+                        Object.keys(exerciseLibrary).forEach(cat => {
+                            const btn = createEl('button', ['exercise-cat-btn'], cat);
+                            if(cat === activeExerciseCat) btn.classList.add('active');
+                            btn.onclick = () => { activeExerciseCat = cat; renderSection(); };
+                            catContainer.appendChild(btn);
+                        });
+                        const exerciseGrid = createEl('div', ['exercise-grid']);
+                        exerciseLibrary[activeExerciseCat].forEach(ex => {
+                            const chip = createEl('div', ['exercise-chip'], ex);
+                            chip.onclick = () => {
+                                const ta = document.getElementById('plan.treatmentPlan');
+                                ta.value = (ta.value.trim() === '' ? `- ${ex}` : `${ta.value}\n- ${ex}`);
+                                handleStateChange('plan.treatmentPlan', ta.value);
+                                ta.dispatchEvent(new Event('input'));
+                                showToast(`Added: ${ex}`);
+                            };
+                            exerciseGrid.appendChild(chip);
+                        });
+                        exerciseContainer.append(createEl('h4', [], 'Quick Exercise Prescriber', { style: 'margin-top:0; margin-bottom:0.5rem;' }), exerciseSearch, catContainer, exerciseGrid);
+
+                        contentArea.appendChild(createCard('Clinical Impression & Plan', 'fa-clipboard-list', [
+                            exerciseContainer,
+                            createTextarea({ label: 'Problem List', id: 'plan.problemList', value: state.plan.problemList }),
+                            createTextarea({ label: 'Goals', id: 'plan.goals', value: state.plan.goals, suggestionList: suggestions.goals }),
+                            createTextarea({ label: 'Treatment Plan', id: 'plan.treatmentPlan', value: state.plan.treatmentPlan, suggestionList: suggestions.plan }),
+                            createInput({ label: 'Next Appointment', id: 'plan.nextAppointment', type: 'date', value: state.plan.nextAppointment })
+                        ])); 
+                        break;
+                    case 'tools': 
+                        const calculateBMI = () => {
+                            const h = parseFloat(document.getElementById('tool-height').value) / 100;
+                            const w = parseFloat(document.getElementById('tool-weight').value);
+                            if(h > 0 && w > 0) {
+                                const bmi = (w / (h * h)).toFixed(1);
+                                document.getElementById('tool-bmi-result').textContent = `BMI: ${bmi}`;
+                            } else { document.getElementById('tool-bmi-result').textContent = 'BMI: --'; }
+                        };
+                        const bmiCard = createCard('BMI Calculator', 'fa-calculator', [
+                            createEl('div', ['grid', 'grid-cols-2'], [
+                                createInput({ label: 'Height (cm)', id: 'tool-height', type: 'number', oninput: calculateBMI }),
+                                createInput({ label: 'Weight (kg)', id: 'tool-weight', type: 'number', oninput: calculateBMI })
+                            ]),
+                            createEl('div', ['calc-result'], [], { id: 'tool-bmi-result', textContent: 'BMI: --' })
+                        ]);
+
+                        const calculateHR = () => {
+                            const age = parseInt(document.getElementById('tool-age').value);
+                            if(age > 0) {
+                                const max = 220 - age;
+                                document.getElementById('tool-hr-result').innerHTML = `Max HR: ${max} bpm<br>Zone 2 (60-70%): ${Math.round(max*0.6)}-${Math.round(max*0.7)} bpm`;
+                            } else { document.getElementById('tool-hr-result').textContent = 'Result: --'; }
+                        };
+                        const hrCard = createCard('Max Heart Rate (220-Age)', 'fa-heart-pulse', [
+                            createInput({ label: 'Patient Age', id: 'tool-age', type: 'number', oninput: calculateHR }),
+                            createEl('div', ['calc-result'], [], { id: 'tool-hr-result', textContent: 'Result: --' })
+                        ]);
+
+                        const stopwatchCard = createCard('Clinical Stopwatch', 'fa-stopwatch', [
+                            createEl('div', ['stopwatch-display'], [], { id: 'stopwatch-display', textContent: '00:00' }),
+                            createEl('div', ['stopwatch-controls'], [
+                                createBtn('Start', 'fa-play', () => {
+                                    if(stopwatchInterval) return;
+                                    const startTime = Date.now() - stopwatchTime;
+                                    stopwatchInterval = setInterval(() => {
+                                        stopwatchTime = Date.now() - startTime;
+                                        const seconds = Math.floor((stopwatchTime / 1000) % 60);
+                                        const minutes = Math.floor((stopwatchTime / (1000 * 60)) % 60);
+                                        const display = document.getElementById('stopwatch-display');
+                                        if (display) display.textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+                                    }, 100); 
+                                }, true),
+                                createBtn('Stop', 'fa-pause', () => { clearInterval(stopwatchInterval); stopwatchInterval = null; }),
+                                createBtn('Reset', 'fa-redo', () => { clearInterval(stopwatchInterval); stopwatchInterval = null; stopwatchTime = 0; const d = document.getElementById('stopwatch-display'); if(d) d.textContent = '00:00'; })
+                            ])
+                        ]);
+
+                        const romTable = createEl('table', ['rom-table']);
+                        const thead = createEl('thead', [], [createEl('tr', [], [createEl('th', [], 'Joint'), createEl('th', [], 'Movement'), createEl('th', [], 'Normal')])]);
+                        const tbody = createEl('tbody');
+                        romData.forEach(d => { tbody.appendChild(createEl('tr', [], [createEl('td', [], d.joint), createEl('td', [], d.move), createEl('td', [], d.normal)])); });
+                        romTable.append(thead, tbody);
+                        const romCard = createCard('Normal ROM Reference', 'fa-ruler-combined', [romTable]);
+
+                        contentArea.append(bmiCard, hrCard, stopwatchCard, romCard); 
+                        break;
+                    default:
+                        // Fallback safely if unknown section
+                        activeSection = 'dashboard';
+                        renderSection();
+                        return;
+                }
+                
+                contentArea.appendChild(createNavButtons(activeSection));
+                
+                if(!document.querySelector('.scroll-to-top')) {
+                    const scrollBtn = createEl('button', ['scroll-to-top'], '<i class="fas fa-arrow-up"></i>');
+                    scrollBtn.onclick = () => { const area = document.querySelector('.content-area'); if(area) area.scrollTo({ top: 0, behavior: 'smooth' }); };
+                    document.body.appendChild(scrollBtn);
+                    const area = document.querySelector('.content-area');
+                    if(area) {
+                        area.addEventListener('scroll', () => {
+                            if(area.scrollTop > 300) scrollBtn.classList.add('visible');
+                            else scrollBtn.classList.remove('visible');
+                        });
+                    }
+                }
+            }
+            
+            function renderApp() {
+                const appContainer = document.getElementById('app-container');
+                if (!document.querySelector('.sidebar')) {
+                    appContainer.innerHTML = '';
+                    const sidebar = createEl('aside', ['sidebar']);
+                    const sidebarNav = createEl('nav', [], [], {id: 'sidebar-nav'});
+                    sidebar.append(createEl('div', ['sidebar-header'], '<h2>Sections</h2>'), sidebarNav);
+                    const mainContent = createEl('div', ['main-content']);
+                    const header = createEl('header', ['header']);
+                    const fileInput = createEl('input', ['hidden'], [], { type: 'file', accept: '.json' });
+                    fileInput.addEventListener('change', (event) => {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                const loadedState = JSON.parse(e.target.result);
+                                // Merge loaded state safely
+                                state = deepMerge(JSON.parse(JSON.stringify(initialAppState)), loadedState);
+                                localStorage.setItem('smartPhysioState', JSON.stringify(state));
+                                unsavedChanges = false;
+                                updateSaveButtonState();
+                                showToast("File loaded successfully.");
+                                renderApp();
+                            } catch (err) { showToast('Failed to parse file.', 'error'); }
+                        };
+                        reader.readAsText(file);
+                    });
+
+                    const themeToggleBtn = createEl('button', ['menu-toggle'], '<i class="fas fa-moon"></i>', { 
+                        title: 'Toggle Dark Mode',
+                        onclick: () => { 
+                            document.body.classList.toggle('dark-mode');
+                            const isDark = document.body.classList.contains('dark-mode');
+                            themeToggleBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+                            localStorage.setItem('smartPhysioTheme', isDark ? 'dark' : 'light');
+                        }
+                    });
+
+                    // Home Button to link back to index.html in GitHub repo
+                    const homeBtn = createEl('a', ['menu-toggle'], '<i class="fas fa-home"></i>', {
+                        href: 'index.html',
+                        title: 'Back to Index',
+                        style: 'text-decoration: none;'
+                    });
+
+                    const patientListBtn = createBtn('Patients', 'fa-users', () => {
+                        const modalOverlay = createEl('div', ['modal-overlay']);
+                        const modal = createEl('div', ['modal'], [
+                            createEl('header', ['modal-header'], [
+                                createEl('h2', ['modal-title'], 'Saved Patients'),
+                                createEl('button', ['btn'], '<i class="fas fa-times"></i>', { onclick: () => modalOverlay.remove() })
+                            ]),
+                            createEl('main', ['modal-body'], [ createEl('div', ['patient-list'], [], { id: 'patient-list-content', innerHTML: renderPatientListItems() }) ]),
+                            createEl('footer', ['modal-header'], [ createEl('div'), createBtn('Save Current Profile', 'fa-save', savePatientToLibrary, true) ], { style: 'border-top: 1px solid var(--glass-border);' })
+                        ]);
+                        modalOverlay.appendChild(modal);
+                        document.body.appendChild(modalOverlay);
+                    });
+
+                    header.appendChild(createEl('div', ['header-container'], [
+                        createEl('div', ['header-left'], [
+                            createEl('button', ['menu-toggle'], '<i class="fas fa-bars"></i>', { 
+                                'aria-label': 'Toggle menu', 
+                                onclick: () => { 
+                                    isSidebarOpen = !isSidebarOpen; 
+                                    const sb = document.querySelector('.sidebar');
+                                    const overlay = document.querySelector('.sidebar-overlay');
+                                    if(isSidebarOpen) {
+                                        sb.classList.add('is-open');
+                                        if(overlay) overlay.style.display = 'block';
+                                    } else {
+                                        sb.classList.remove('is-open');
+                                        if(overlay) overlay.style.display = 'none';
+                                    }
+                                } 
+                            }),
+                            createEl('h1', ['header-title'], 'Extremities & Spine'),
+                            themeToggleBtn,
+                            homeBtn
+                        ]),
+                        createEl('div', ['header-actions'], [
+                            patientListBtn, fileInput,
+                            createBtn('New', 'fa-user-plus', () => {
+                                if (confirm('Start New Patient? This will clear current fields.')) {
+                                    const { clinician, clinic } = state.patient;
+                                    state = JSON.parse(JSON.stringify(initialAppState));
+                                    state.patient.clinician = clinician;
+                                    state.patient.clinic = clinic;
+                                    state.id = null;
+                                    activeSection = 'dashboard';
+                                    localStorage.setItem('smartPhysioState', JSON.stringify(state));
+                                    unsavedChanges = false;
+                                    updateSaveButtonState();
+                                    showToast("New patient started.");
+                                    renderApp();
+                                }
+                            }),
+                            createBtn('Load', 'fa-folder-open', () => fileInput.click()),
+                            createBtn('Save', 'fa-save', () => {
+                                const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+                                const a = createEl('a', [], [], { href: URL.createObjectURL(blob), download: `physio_data_${new Date().toISOString().slice(0,10)}.json`});
+                                a.click();
+                                URL.revokeObjectURL(a.href);
+                                unsavedChanges = false;
+                                updateSaveButtonState();
+                                showToast("File saved to downloads.");
+                            }, false, 'btn-save-main'),
+                            createBtn('Report', 'fa-file-alt', () => {
+                                const reportContent = generateReportHTML(state);
+                                const modalOverlay = createEl('div', ['modal-overlay']);
+                                const modal = createEl('div', ['modal'], [
+                                    createEl('header', ['modal-header'], [
+                                        createEl('h2', ['modal-title'], 'Generated Report'),
+                                        createEl('div', ['modal-header-actions'], [
+                                            createBtn('Copy', 'fa-copy', () => {
+                                                const text = document.querySelector('.report-page').innerText;
+                                                try {
+                                                    navigator.clipboard.writeText(text).then(() => showToast('Copied report text!'), () => { throw new Error('Clipboard failed'); });
+                                                } catch (e) {
+                                                    const textArea = document.createElement("textarea");
+                                                    textArea.value = text;
+                                                    document.body.appendChild(textArea);
+                                                    textArea.select();
+                                                    try { document.execCommand('copy'); showToast('Copied report text!'); } catch (err) { showToast('Copy failed.', 'error'); }
+                                                    document.body.removeChild(textArea);
+                                                }
+                                            }),
+                                            createBtn('Print', 'fa-print', () => window.print()),
+                                            createBtn('Close', 'fa-times', () => modalOverlay.remove())
+                                        ])
+                                    ]),
+                                    createEl('main', ['modal-body'], [], { innerHTML: reportContent })
+                                ]);
+                                modalOverlay.appendChild(modal);
+                                modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.remove() });
+                                document.body.appendChild(modalOverlay);
+                            }, true)
+                        ])
+                    ]));
+
+                    mainContent.append(header, createEl('main', ['content-area'], [createEl('div', ['container'])]));
+                    appContainer.append(sidebar, mainContent);
+                    const overlay = createEl('div', ['sidebar-overlay']);
+                    overlay.style.display = 'none';
+                    overlay.addEventListener('click', () => {
+                        isSidebarOpen = false;
+                        document.querySelector('.sidebar').classList.remove('is-open');
+                        overlay.style.display = 'none';
+                    });
+                    appContainer.appendChild(overlay);
+                }
+
+                const savedTheme = localStorage.getItem('smartPhysioTheme');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    const toggle = document.querySelector('button.menu-toggle[title="Toggle Dark Mode"]');
+                    if(toggle) toggle.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+
+                const sidebarNav = document.getElementById('sidebar-nav');
+                sidebarNav.innerHTML = '';
+                navItems.forEach(item => {
+                    const navLink = createEl('a', ['nav-item'], `<i class="fas ${item.icon}"></i> ${item.label}`, { href: '#'});
+                    if (item.id === activeSection) navLink.classList.add('active');
+                    navLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        activeSection = item.id;
+                        if(window.innerWidth < 1024) {
+                            isSidebarOpen = false;
+                            document.querySelector('.sidebar').classList.remove('is-open');
+                            const overlay = document.querySelector('.sidebar-overlay');
+                            if(overlay) overlay.style.display = 'none';
+                        }
+                        renderApp();
+                    });
+                    sidebarNav.appendChild(navLink);
+                });
+
+                renderSection();
+            }
+
+            try {
+                const savedState = localStorage.getItem('smartPhysioState');
+                if (savedState) {
+                    // Safe merge on init
+                    state = deepMerge(JSON.parse(JSON.stringify(initialAppState)), JSON.parse(savedState));
+                } else {
+                    state = JSON.parse(JSON.stringify(initialAppState));
+                }
+            } catch (error) {
+                console.error("Failed to load from localStorage", error);
+                state = JSON.parse(JSON.stringify(initialAppState));
+            }
+            renderApp();
+        });
+    </script>
+</body>
+</html>
