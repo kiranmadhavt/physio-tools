@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Neuro Assessment Tool v13.5 (Glass)</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Config & Styles -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        medical: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            500: '#64748b',
+                            700: '#334155',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* --- iPad & Glassmorphism Base --- */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.70);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+            --glass-blur: blur(12px);
+        }
+
+        html, body {
+            background: linear-gradient(135deg, #e0f2fe 0%, #eef2ff 50%, #fce7f3 100%);
+            background-attachment: fixed;
+            color: #0f172a; /* Slate 900 */
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            min-height: 100vh;
+            /* Smooth scrolling for iOS */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Prevent Text Selection on UI elements */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* --- Glass Components --- */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Dark Mode Support for Glass */
+        .dark body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) fixed;
+            color: #f1f5f9;
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.75);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+        .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 {
+            color: #cbd5e1; /* Lighter text for dark mode */
+        }
+        .dark .bg-slate-50 {
+            background-color: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.05);
+        }
+        .dark .clinical-input {
+            background-color: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* --- Inputs - Touch Friendly --- */
+        input, select, textarea, button {
+            touch-action: manipulation;
+        }
+        
+        .clinical-input {
+            min-height: 44px; /* iOS Min Touch Target */
+            height: 44px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem; /* Slightly softer corners */
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            width: 100%;
+            font-size: 1rem; /* Prevents auto-zoom on iOS */
+            transition: all 0.2s;
+        }
+        
+        .clinical-input:hover {
+            border-color: #94a3b8;
+            background-color: #ffffff;
+        }
+
+        .clinical-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        textarea.clinical-input {
+            height: auto;
+            min-height: 80px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        /* --- Card Accents --- */
+        /* Updated borders for glass feel */
+        .card-accent-blue { border-left: 4px solid #3b82f6; }
+        .card-accent-teal { border-left: 4px solid #14b8a6; }
+        .card-accent-cyan { border-left: 4px solid #06b6d4; }
+        .card-accent-indigo { border-left: 4px solid #6366f1; }
+        .card-accent-orange { border-left: 4px solid #f97316; }
+        .card-accent-emerald { border-left: 4px solid #10b981; }
+        .card-accent-fuchsia { border-left: 4px solid #d946ef; }
+        .card-accent-slate { border-left: 4px solid #64748b; }
+        .card-accent-sky { border-left: 4px solid #0ea5e9; }
+
+        /* --- Canvas --- */
+        #bodyChartCanvas {
+            touch-action: none;
+            cursor: crosshair;
+        }
+        
+        .tool-btn.active {
+            background-color: #e2e8f0;
+            border-color: #94a3b8;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        /* --- Animations --- */
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-enter {
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* --- Print Styles --- */
+        @media print {
+            body { background: white; }
+            .glass { 
+                background: none !important; 
+                backdrop-filter: none !important; 
+                box-shadow: none !important; 
+                border: 1px solid #eee !important;
+            }
+            .no-print { display: none !important; }
+            .print-break-inside { break-inside: avoid; }
+            
+            input, textarea, select { 
+                border: none !important; 
+                background: transparent !important; 
+                padding: 0 !important; 
+                appearance: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="pb-24 pt-20"> <!-- Added pt-20 for fixed header spacing -->
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="glass fixed top-0 left-0 right-0 z-50 no-print transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4 no-select">
+                <div class="flex items-center gap-2 text-slate-800 dark:text-white transition font-medium">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <span class="font-bold text-lg hidden md:block">Neuro Assess</span>
+                </div>
+                <div class="h-6 w-px bg-slate-300/50 mx-2"></div>
+                <h1 class="text-sm md:text-base font-semibold text-slate-700 dark:text-slate-200">Clinical Tool <span class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full ml-1 align-middle border border-blue-100">v13.5</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Navigation Home Button -->
+                <a href="index.html" class="p-2.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-white/50 transition duration-200 flex items-center justify-center min-w-[44px] min-h-[44px]" title="Home">
+                    <i class="fas fa-home"></i>
+                </a>
+
+                <!-- Theme Toggle (Optional utility) -->
+                <button onclick="document.documentElement.classList.toggle('dark')" class="p-2.5 rounded-lg text-slate-500 hover:text-purple-600 hover:bg-white/50 transition duration-200 min-w-[44px] min-h-[44px]" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+
+                <div class="h-6 w-px bg-slate-300/50 mx-1"></div>
+
+                <button onclick="NeuroApp.openConfigModal()" class="p-2.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-white/50 transition min-w-[44px] min-h-[44px]" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button onclick="NeuroApp.exportToCSV()" class="p-2.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 transition min-w-[44px] min-h-[44px]" title="Export CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button onclick="NeuroApp.clearForm()" class="p-2.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50/50 transition min-w-[44px] min-h-[44px]" title="Clear">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                
+                <div class="relative group">
+                    <button class="p-2.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50/50 transition min-w-[44px] min-h-[44px]" title="Data Options">
+                        <i class="fas fa-database"></i>
+                    </button>
+                    <!-- Dropdown -->
+                    <div class="absolute right-0 mt-2 w-48 glass rounded-xl shadow-xl py-1 overflow-hidden hidden group-hover:block animate-enter">
+                        <button onclick="NeuroApp.downloadJSON()" class="block w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 transition">
+                            <i class="fas fa-download mr-2 text-blue-500"></i> Backup JSON
+                        </button>
+                        <label class="block w-full text-left px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50 cursor-pointer transition">
+                            <i class="fas fa-upload mr-2 text-emerald-500"></i> Restore Data
+                            <input type="file" id="fileInput" class="hidden" onchange="NeuroApp.importJSON(this)">
+                        </label>
+                    </div>
+                </div>
+                
+                <button onclick="window.print()" class="hidden md:block bg-slate-800 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-900 shadow-lg shadow-slate-900/10 ml-2 transition">
+                    Print / PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 space-y-6">
+
+        <!-- Section 1: Demographics -->
+        <section class="glass rounded-xl p-6 card-accent-blue print-break-inside animate-enter" style="animation-delay: 0.1s;">
+            <div class="flex justify-between items-center mb-4 no-select">
+                <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                    <i class="fas fa-user-circle text-blue-500"></i> Demographics
+                </h2>
+                <div class="text-xs font-medium text-slate-400 bg-slate-100/50 dark:bg-slate-800/50 px-2 py-1 rounded-full" id="lastSaved">Ready</div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Patient Name</label>
+                    <input type="text" id="ptName" class="clinical-input" placeholder="Last, First">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Age / Gender</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="ptAge" class="clinical-input w-24" placeholder="Age">
+                        <select id="ptGender" class="clinical-input flex-1">
+                            <option value="">Sex</option>
+                            <option value="Male">M</option>
+                            <option value="Female">F</option>
+                            <option value="Other">O</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Assessment Date</label>
+                    <input type="date" id="dateAssessment" class="clinical-input">
+                </div>
+                 <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Date of Onset</label>
+                    <input type="date" id="dateOnset" class="clinical-input" onchange="NeuroApp.calcChronicity()">
+                </div>
+            </div>
+
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Chronicity</label>
+                    <input type="text" id="chronicity" class="clinical-input bg-slate-50/50 text-slate-500" placeholder="Duration" readonly>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Clinical Diagnosis</label>
+                    <select id="diagnosisType" class="clinical-input mb-2">
+                        <option value="">Select Condition...</option>
+                        <option value="Left Hemiplegia">Stroke - Left Hemiplegia</option>
+                        <option value="Right Hemiplegia">Stroke - Right Hemiplegia</option>
+                        <option value="SCI - Paraplegia">SCI - Paraplegia</option>
+                        <option value="SCI - Tetraplegia">SCI - Tetraplegia</option>
+                        <option value="TBI">Traumatic Brain Injury</option>
+                        <option value="Parkinsons">Parkinson's Disease</option>
+                        <option value="GBS">Guillain-Barré Syndrome</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">History (HOPI)</label>
+                     <textarea id="hopi" class="clinical-input py-3" rows="2" placeholder="Brief history..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">MRI / CT Findings</label>
+                    <textarea id="mriReport" class="clinical-input py-3" rows="2" placeholder="Imaging details (e.g., Left MCA Infarct)..."></textarea>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Patient's Primary Goal</label>
+                <textarea id="ptGoal" class="clinical-input py-3" rows="2" placeholder="e.g. Walk to the bathroom independently..."></textarea>
+            </div>
+        </section>
+
+        <!-- Section 2: Vitals & Symptoms -->
+        <section class="glass rounded-xl p-6 card-accent-teal print-break-inside animate-enter" style="animation-delay: 0.2s;">
+            <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                <i class="fas fa-heartbeat text-teal-500"></i> Vitals & Calculators
+            </h2>
+            
+            <!-- Vitals Row 1 -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">BP (mmHg)</label>
+                    <input type="text" id="vitBP" class="clinical-input" placeholder="120/80" onkeyup="NeuroApp.calcMAP()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">HR (bpm)</label>
+                    <input type="number" id="vitHR" class="clinical-input" placeholder="bpm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">SpO2 (%)</label>
+                    <input type="number" id="vitSpo2" class="clinical-input" placeholder="%">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">RR (/min)</label>
+                    <input type="number" id="vitRR" class="clinical-input" placeholder="/min">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Temp</label>
+                    <input type="text" id="vitTemp" class="clinical-input" placeholder="°C/°F">
+                </div>
+            </div>
+
+            <!-- Vitals Row 2 (Calculated) -->
+             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 bg-teal-50/40 dark:bg-teal-900/20 p-4 rounded-xl border border-teal-100/50">
+                <div>
+                    <label class="block text-xs font-bold text-teal-700 dark:text-teal-400 uppercase mb-1.5 ml-1">Height (cm)</label>
+                    <input type="number" id="vitHeight" class="clinical-input" placeholder="cm" onkeyup="NeuroApp.calcBMI()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-teal-700 dark:text-teal-400 uppercase mb-1.5 ml-1">Weight (kg)</label>
+                    <input type="number" id="vitWeight" class="clinical-input" placeholder="kg" onkeyup="NeuroApp.calcBMI()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">BMI</label>
+                    <input type="text" id="vitBMI" class="clinical-input bg-white/80 font-bold text-teal-700" placeholder="--" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">MAP</label>
+                    <input type="text" id="vitMAP" class="clinical-input bg-white/80 font-bold text-teal-700" placeholder="--" readonly>
+                </div>
+            </div>
+
+            <!-- Pain & Fatigue Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/50">
+                <!-- Pain Section -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Pain (VAS)</label>
+                    <div class="flex items-center gap-4 mb-3 bg-white/40 dark:bg-slate-800/40 p-3 rounded-xl border border-white/40">
+                        <span class="text-sm font-bold text-slate-400 w-4 text-center">0</span>
+                        <input type="range" id="painScale" min="0" max="10" step="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-500" oninput="document.getElementById('painVal').innerText = this.value">
+                        <div class="w-10 h-10 rounded-full bg-teal-500 text-white shadow-lg shadow-teal-500/30 flex items-center justify-center font-bold" id="painVal">0</div>
+                    </div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Description (Neuropathic)</label>
+                    <div class="flex flex-wrap gap-2 no-select">
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-teal-300 transition cursor-pointer"><input type="checkbox" id="painBurn" class="rounded text-teal-500"><span class="text-xs font-medium">Burning</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-teal-300 transition cursor-pointer"><input type="checkbox" id="painShoot" class="rounded text-teal-500"><span class="text-xs font-medium">Shooting</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-teal-300 transition cursor-pointer"><input type="checkbox" id="painElec" class="rounded text-teal-500"><span class="text-xs font-medium">Electric</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-teal-300 transition cursor-pointer"><input type="checkbox" id="painAche" class="rounded text-teal-500"><span class="text-xs font-medium">Aching</span></label>
+                    </div>
+                </div>
+
+                <!-- Fatigue Section -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Fatigue (VAS)</label>
+                    <div class="flex items-center gap-4 mb-3 bg-white/40 dark:bg-slate-800/40 p-3 rounded-xl border border-white/40">
+                        <span class="text-sm font-bold text-slate-400 w-4 text-center">0</span>
+                        <input type="range" id="fatigueScale" min="0" max="10" step="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-500" oninput="document.getElementById('fatigueVal').innerText = this.value">
+                        <div class="w-10 h-10 rounded-full bg-slate-500 text-white shadow-lg shadow-slate-500/30 flex items-center justify-center font-bold" id="fatigueVal">0</div>
+                    </div>
+                    <p class="text-xs text-slate-400 italic ml-1">0 = No Fatigue, 10 = Exhaustion preventing activity</p>
+                </div>
+            </div>
+
+            <!-- GCS -->
+            <div class="mt-4 pt-4 border-t border-slate-200/50">
+                <div class="flex justify-between items-center mb-2 no-select">
+                    <label class="block text-xs font-bold text-slate-500 uppercase ml-1">Glasgow Coma Scale (GCS)</label>
+                    <span id="gcsTotal" class="text-lg font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-lg">Total: --/15</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="gcsEye" class="clinical-input" onchange="NeuroApp.calcGCS()">
+                        <option value="0">Eye Response...</option>
+                        <option value="4">4 - Spontaneous</option>
+                        <option value="3">3 - To Sound</option>
+                        <option value="2">2 - To Pressure</option>
+                        <option value="1">1 - None</option>
+                    </select>
+                    <select id="gcsVerbal" class="clinical-input" onchange="NeuroApp.calcGCS()">
+                        <option value="0">Verbal Response...</option>
+                        <option value="5">5 - Oriented</option>
+                        <option value="4">4 - Confused</option>
+                        <option value="3">3 - Words</option>
+                        <option value="2">2 - Sounds</option>
+                        <option value="1">1 - None</option>
+                    </select>
+                    <select id="gcsMotor" class="clinical-input" onchange="NeuroApp.calcGCS()">
+                        <option value="0">Motor Response...</option>
+                        <option value="6">6 - Obeys Commands</option>
+                        <option value="5">5 - Localising</option>
+                        <option value="4">4 - Normal Flexion</option>
+                        <option value="3">3 - Abnormal Flexion</option>
+                        <option value="2">2 - Extension</option>
+                        <option value="1">1 - None</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sections: Social & Cognition -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section class="glass rounded-xl p-6 card-accent-slate print-break-inside animate-enter" style="animation-delay: 0.3s;">
+                <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                    <i class="fas fa-home text-slate-500"></i> Social Env
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Home Setup</label>
+                        <select id="socialHome" class="clinical-input">
+                            <option value="Ground Floor">Single Level / Ground Floor</option>
+                            <option value="Stairs">Stairs (with Rails)</option>
+                            <option value="Stairs No Rails">Stairs (No Rails)</option>
+                            <option value="Elevator">Elevator Access</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Living Arrangement</label>
+                        <select id="socialSupport" class="clinical-input">
+                            <option value="Family">With Family (Supportive)</option>
+                            <option value="Alone">Lives Alone</option>
+                            <option value="Caregiver">Hired Caregiver</option>
+                            <option value="Institution">Assisted Living / SNF</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass rounded-xl p-6 card-accent-sky print-break-inside animate-enter" style="animation-delay: 0.3s;">
+                <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                    <i class="fas fa-comments text-sky-500"></i> Cognition
+                </h2>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Orientation (x3)</label>
+                    <div class="flex gap-4 mb-4 no-select">
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-sky-300 transition cursor-pointer"><input type="checkbox" id="cogTime" class="rounded text-sky-500 h-5 w-5"><span class="text-sm font-medium">Time</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-sky-300 transition cursor-pointer"><input type="checkbox" id="cogPlace" class="rounded text-sky-500 h-5 w-5"><span class="text-sm font-medium">Place</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-100 hover:border-sky-300 transition cursor-pointer"><input type="checkbox" id="cogPerson" class="rounded text-sky-500 h-5 w-5"><span class="text-sm font-medium">Person</span></label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Commands</label>
+                            <select id="cogCommands" class="clinical-input h-11 py-1">
+                                <option value="Multi-step">Multi-step</option>
+                                <option value="2-step">2-step</option>
+                                <option value="1-step">1-step</option>
+                                <option value="None">None</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Attention</label>
+                            <select id="cogAttention" class="clinical-input h-11 py-1">
+                                <option value="Intact">Intact</option>
+                                <option value="Distractible">Distractible</option>
+                                <option value="Impaired">Impaired</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Section: Cranial Nerves -->
+        <section class="glass rounded-xl p-6 card-accent-cyan print-break-inside animate-enter" style="animation-delay: 0.4s;">
+            <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                <i class="fas fa-brain text-cyan-500"></i> Cranial Nerves
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">CN II: Vision</label>
+                    <select id="cnVision" class="clinical-input">
+                        <option value="Normal">Normal</option>
+                        <option value="Hemianopia Right">Hemianopia R</option>
+                        <option value="Hemianopia Left">Hemianopia L</option>
+                        <option value="Neglect">Neglect</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">CN III, IV, VI</label>
+                    <select id="cnEOM" class="clinical-input">
+                        <option value="Normal">Full EOM</option>
+                        <option value="Diplopia">Diplopia</option>
+                        <option value="Gaze Palsy">Gaze Palsy</option>
+                        <option value="Ptosis">Ptosis</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">CN VII: Face</label>
+                    <select id="cnFace" class="clinical-input">
+                        <option value="Normal">Symmetrical</option>
+                        <option value="LMN Palsy">LMN Palsy</option>
+                        <option value="UMN Droop">UMN Droop</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">CN IX, X, XII</label>
+                    <select id="cnBulbar" class="clinical-input">
+                        <option value="Normal">Normal</option>
+                        <option value="Dysphagia">Dysphagia</option>
+                        <option value="Dysarthria">Dysarthria</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Body Chart -->
+        <section class="glass rounded-xl p-6 card-accent-indigo print-break-inside animate-enter" style="animation-delay: 0.5s;">
+             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4 no-select">
+                <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                    <i class="fas fa-child text-indigo-500"></i> Body Chart
+                </h2>
+                <!-- Canvas Toolbar -->
+                <div class="flex flex-wrap gap-2 bg-slate-100/80 p-1.5 rounded-xl no-print justify-center border border-slate-200">
+                     <button onclick="NeuroApp.setTool('black')" id="toolBlack" class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-slate-900 hover:bg-white transition border border-transparent" title="Note (Black)">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button onclick="NeuroApp.setTool('red')" id="toolRed" class="tool-btn active w-9 h-9 rounded-lg flex items-center justify-center text-red-500 hover:bg-white transition border border-transparent" title="Pain (Red)">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <button onclick="NeuroApp.setTool('blue')" id="toolBlue" class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-blue-500 hover:bg-white transition border border-transparent" title="Sensory (Blue)">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                     <button onclick="NeuroApp.setTool('green')" id="toolGreen" class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-green-500 hover:bg-white transition border border-transparent" title="Intact (Green)">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <div class="w-px bg-slate-300 mx-1"></div>
+                    <button onclick="NeuroApp.toggleWidth()" id="toolWidth" class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-white transition" title="Toggle Thickness">
+                        <i class="fas fa-circle text-[8px]"></i>
+                    </button>
+                    <button onclick="NeuroApp.setTool('eraser')" id="toolEraser" class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-white transition border border-transparent" title="Eraser">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                    <div class="w-px bg-slate-300 mx-1"></div>
+                    <button onclick="NeuroApp.undoCanvas()" class="w-9 h-9 rounded-lg flex items-center justify-center text-slate-600 hover:bg-white transition" title="Undo">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button onclick="NeuroApp.clearCanvas()" class="w-9 h-9 rounded-lg flex items-center justify-center text-red-600 hover:bg-red-50 transition" title="Clear All">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="relative w-full h-[450px] border border-slate-200 rounded-xl bg-white overflow-hidden flex justify-center items-center select-none shadow-inner">
+                <!-- SVG Background -->
+                <svg class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid meet">
+                    <path d="M100,20 C115,20 125,35 125,50 C125,65 115,80 100,80 C85,80 75,65 75,50 C75,35 85,20 100,20 Z" fill="#cbd5e1"/>
+                    <path d="M75,85 L40,95 L30,200 L50,200 L65,110 L75,150 L75,250 L60,380 L85,380 L95,260 L105,260 L115,380 L140,380 L125,250 L125,150 L135,110 L150,200 L170,200 L160,95 L125,85 Z" fill="#cbd5e1"/>
+                </svg>
+                <!-- Canvas -->
+                <canvas id="bodyChartCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+            </div>
+            <p class="text-xs text-slate-400 mt-3 text-center no-print no-select">
+                <span class="text-red-500 font-bold px-2 py-1 bg-red-50 rounded">Pain</span>
+                <span class="text-blue-500 font-bold px-2 py-1 bg-blue-50 rounded ml-2">Sensory</span>
+                <span class="text-green-500 font-bold px-2 py-1 bg-green-50 rounded ml-2">Intact</span>
+                <span class="text-slate-900 font-bold px-2 py-1 bg-slate-100 rounded ml-2">Marker</span>
+            </p>
+        </section>
+
+        <!-- Section 4: Motor & Sensory -->
+        <section class="glass rounded-xl p-6 card-accent-orange print-break-inside animate-enter" style="animation-delay: 0.6s;">
+             <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                <i class="fas fa-dumbbell text-orange-500"></i> Motor & Sensory
+            </h2>
+             
+             <!-- Brunnstrom -->
+             <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 border-b border-slate-200 pb-1 ml-1">Brunnstrom Recovery</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="brunnUpper" class="clinical-input" aria-label="Upper Limb"><option value="">Upper Limb Stage...</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                    <select id="brunnHand" class="clinical-input" aria-label="Hand"><option value="">Hand Stage...</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                    <select id="brunnLower" class="clinical-input" aria-label="Lower Limb"><option value="">Lower Limb Stage...</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                </div>
+             </div>
+
+             <!-- Coordination -->
+             <div class="mb-6 border-b border-slate-200 pb-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Coordination (Impairment)</label>
+                <div class="flex flex-wrap gap-4 no-select">
+                    <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-200 hover:border-orange-300 transition cursor-pointer"><input type="checkbox" id="coordFingerNose" class="rounded text-orange-500"><span class="text-sm font-medium">Finger-Nose</span></label>
+                    <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-200 hover:border-orange-300 transition cursor-pointer"><input type="checkbox" id="coordHeelShin" class="rounded text-orange-500"><span class="text-sm font-medium">Heel-Shin</span></label>
+                    <label class="flex items-center space-x-2 bg-white/50 px-3 py-2 rounded-lg border border-slate-200 hover:border-orange-300 transition cursor-pointer"><input type="checkbox" id="coordDDK" class="rounded text-orange-500"><span class="text-sm font-medium">Dysdiadochokinesia</span></label>
+                </div>
+             </div>
+
+             <!-- Proprioception -->
+             <div class="overflow-x-auto mb-6">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Proprioception (Joint Position Sense)</label>
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50/50"><tr><th class="px-2 py-2 rounded-l-lg">Joint</th><th class="px-2 py-2">Right</th><th class="px-2 py-2 rounded-r-lg">Left</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100/50">
+                        <tr>
+                            <td class="px-2 py-2 font-medium">Thumb (Up/Down)</td>
+                            <td class="px-1"><select id="jpsThumbR" class="clinical-input h-10 py-0 text-sm"><option value="Intact">Intact</option><option value="Impaired">Impaired</option><option value="Absent">Absent</option></select></td>
+                            <td class="px-1"><select id="jpsThumbL" class="clinical-input h-10 py-0 text-sm"><option value="Intact">Intact</option><option value="Impaired">Impaired</option><option value="Absent">Absent</option></select></td>
+                        </tr>
+                        <tr>
+                            <td class="px-2 py-2 font-medium">Great Toe (Up/Down)</td>
+                            <td class="px-1"><select id="jpsToeR" class="clinical-input h-10 py-0 text-sm"><option value="Intact">Intact</option><option value="Impaired">Impaired</option><option value="Absent">Absent</option></select></td>
+                            <td class="px-1"><select id="jpsToeL" class="clinical-input h-10 py-0 text-sm"><option value="Intact">Intact</option><option value="Impaired">Impaired</option><option value="Absent">Absent</option></select></td>
+                        </tr>
+                    </tbody>
+                </table>
+             </div>
+
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <!-- Tone (MAS) -->
+                 <div class="overflow-x-auto">
+                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Tone (MAS)</label>
+                     <table class="w-full text-sm text-left text-slate-600">
+                         <thead class="text-xs text-slate-500 uppercase bg-slate-50/50"><tr><th class="px-2 py-2 rounded-l-lg">Joint</th><th class="px-2 py-2">R</th><th class="px-2 py-2 rounded-r-lg">L</th></tr></thead>
+                         <tbody class="divide-y divide-slate-100/50" id="masTableBody">
+                            <!-- JS Generated -->
+                         </tbody>
+                     </table>
+                 </div>
+                 <!-- Sensory -->
+                 <div class="overflow-x-auto">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Dermatomes (0-2)</label>
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/50"><tr><th class="px-2 py-2 rounded-l-lg">Lvl</th><th class="px-2 py-2">R</th><th class="px-2 py-2 rounded-r-lg">L</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100/50" id="sensoryTableBody">
+                            <!-- JS Generated -->
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+        </section>
+
+        <!-- Section 5: Gait & Neuro Status -->
+        <section class="glass rounded-xl p-6 card-accent-emerald print-break-inside animate-enter" style="animation-delay: 0.7s;">
+            <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                <i class="fas fa-walking text-emerald-500"></i> Gait & UMN Signs
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Gait Column -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Gait Deviations</label>
+                    <div class="space-y-2 mb-4 no-select">
+                        <label class="flex items-center space-x-2 bg-white/50 p-2 rounded-lg border border-slate-100"><input type="checkbox" id="gaitTrend" class="rounded text-emerald-600"><span class="text-sm font-medium">Trendelenburg</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 p-2 rounded-lg border border-slate-100"><input type="checkbox" id="gaitCircum" class="rounded text-emerald-600"><span class="text-sm font-medium">Circumduction</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 p-2 rounded-lg border border-slate-100"><input type="checkbox" id="gaitDrop" class="rounded text-emerald-600"><span class="text-sm font-medium">Foot Drop</span></label>
+                        <label class="flex items-center space-x-2 bg-white/50 p-2 rounded-lg border border-slate-100"><input type="checkbox" id="gaitHyper" class="rounded text-emerald-600"><span class="text-sm font-medium">Knee Hyperextension</span></label>
+                    </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Assistive Device</label>
+                    <select id="gaitAid" class="clinical-input mb-4">
+                        <option value="None">None / Independent</option>
+                        <option value="AFO">AFO (Ankle Foot Orthosis)</option>
+                        <option value="Cane">Single Point Cane</option>
+                        <option value="Quad Cane">Quad Cane</option>
+                        <option value="Walker">Walker / Frame</option>
+                        <option value="Wheelchair">Wheelchair Dependent</option>
+                    </select>
+                    
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">UMN Signs</label>
+                    <div class="flex gap-4">
+                        <div><span class="text-xs block text-slate-400 mb-1 ml-1">Babinski</span><select id="umnBabinski" class="clinical-input h-10 py-0 text-sm"><option value="Negative">Neg</option><option value="Positive">Pos</option></select></div>
+                        <div><span class="text-xs block text-slate-400 mb-1 ml-1">Clonus</span><select id="umnClonus" class="clinical-input h-10 py-0 text-sm"><option value="Absent">Absent</option><option value="Present">Present</option></select></div>
+                    </div>
+                </div>
+
+                <!-- DTR Table Column -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Reflexes (DTR)</label>
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/50"><tr><th class="px-2 py-2 rounded-l-lg">Reflex</th><th class="px-2 py-2">R</th><th class="px-2 py-2 rounded-r-lg">L</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100/50" id="dtrTableBody">
+                            <!-- JS Generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- New Section: Functional Mobility -->
+        <section class="glass rounded-xl p-6 card-accent-fuchsia print-break-inside mb-10 animate-enter" style="animation-delay: 0.8s;">
+            <h2 class="text-lg font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2 no-select">
+                <i class="fas fa-wheelchair text-fuchsia-500"></i> Functional Mobility
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Bed Mobility (Rolling)</label>
+                    <select id="funcRolling" class="clinical-input">
+                        <option value="Independent">Independent</option>
+                        <option value="Supervision">Supervision</option>
+                        <option value="Min Assist">Min Assist</option>
+                        <option value="Mod Assist">Mod Assist</option>
+                        <option value="Max Assist">Max Assist</option>
+                        <option value="Dependent">Dependent</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Supine to Sit</label>
+                    <select id="funcSupineSit" class="clinical-input">
+                        <option value="Independent">Independent</option>
+                        <option value="Supervision">Supervision</option>
+                        <option value="Min Assist">Min Assist</option>
+                        <option value="Mod Assist">Mod Assist</option>
+                        <option value="Max Assist">Max Assist</option>
+                        <option value="Dependent">Dependent</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Sit to Stand</label>
+                    <select id="funcSitStand" class="clinical-input">
+                        <option value="Independent">Independent</option>
+                        <option value="Supervision">Supervision</option>
+                        <option value="Min Assist">Min Assist</option>
+                        <option value="Mod Assist">Mod Assist</option>
+                        <option value="Max Assist">Max Assist</option>
+                        <option value="Dependent">Dependent</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Transfers</label>
+                    <select id="funcTransfers" class="clinical-input">
+                        <option value="Independent">Independent</option>
+                        <option value="Supervision">Supervision</option>
+                        <option value="Min Assist">Min Assist</option>
+                        <option value="Mod Assist">Mod Assist</option>
+                        <option value="Max Assist">Max Assist</option>
+                        <option value="Dependent">Dependent</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // NeuroApp Logic Module
+        const NeuroApp = (() => {
+            
+            // --- Configuration ---
+            const storageKey = 'neuro_assessment_data_v1';
+            let currentTool = 'red'; // red, blue, eraser, green, black
+            let lineWidth = 4;
+            let isDrawing = false;
+            let canvas, ctx;
+            let history = []; // Canvas history for Undo
+            let historyStep = -1;
+
+            // --- Tables Configuration ---
+            const masJoints = ['Elbow Flex', 'Wrist Flex', 'Knee Ext', 'Ankle PF'];
+            const dermatomes = ['C5', 'C6', 'C7', 'C8', 'L4', 'L5', 'S1'];
+            const reflexPoints = ['Biceps', 'Triceps', 'Patellar', 'Achilles'];
+
+            // --- Utilities ---
+            // Debounce function to limit rapid calls (Autosave)
+            const debounce = (func, wait) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            };
+
+            // --- Initialization ---
+            const init = () => {
+                generateTables();
+                setupCanvas();
+                loadData();
+                setupAutoSave();
+                
+                // Set default assessment date to today if empty
+                const dateField = document.getElementById('dateAssessment');
+                if(!dateField.value) {
+                    dateField.valueAsDate = new Date();
+                }
+
+                // Add print listener to auto-expand textareas
+                window.onbeforeprint = () => {
+                   document.querySelectorAll('textarea').forEach(ta => {
+                       ta.style.height = 'auto';
+                       ta.style.height = ta.scrollHeight + 'px';
+                   });
+                };
+            };
+
+            // --- DOM Generation ---
+            const generateTables = () => {
+                // MAS Table
+                const masHtml = masJoints.map(joint => `
+                    <tr>
+                        <td class="px-2 py-2 font-medium">${joint}</td>
+                        <td class="px-1"><select id="mas_${joint.replace(/\s/g,'')}_R" class="clinical-input h-10 py-0 text-sm"><option value="0">0</option><option value="1">1</option><option value="1+">1+</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+                        <td class="px-1"><select id="mas_${joint.replace(/\s/g,'')}_L" class="clinical-input h-10 py-0 text-sm"><option value="0">0</option><option value="1">1</option><option value="1+">1+</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+                    </tr>
+                `).join('');
+                document.getElementById('masTableBody').innerHTML = masHtml;
+
+                // Sensory Table
+                const sensoryHtml = dermatomes.map(lvl => `
+                    <tr>
+                        <td class="px-2 py-2 font-medium">${lvl}</td>
+                        <td class="px-1"><select id="sens_${lvl}_R" class="clinical-input h-10 py-0 text-sm"><option value="2">2</option><option value="1">1</option><option value="0">0</option></select></td>
+                        <td class="px-1"><select id="sens_${lvl}_L" class="clinical-input h-10 py-0 text-sm"><option value="2">2</option><option value="1">1</option><option value="0">0</option></select></td>
+                    </tr>
+                `).join('');
+                document.getElementById('sensoryTableBody').innerHTML = sensoryHtml;
+
+                // DTR Table
+                const dtrHtml = reflexPoints.map(ref => `
+                    <tr>
+                        <td class="px-2 py-2 font-medium">${ref}</td>
+                        <td class="px-1"><select id="dtr_${ref}_R" class="clinical-input h-10 py-0 text-sm"><option value="2+">2+</option><option value="0">0</option><option value="1+">1+</option><option value="3+">3+</option><option value="4+">4+</option></select></td>
+                        <td class="px-1"><select id="dtr_${ref}_L" class="clinical-input h-10 py-0 text-sm"><option value="2+">2+</option><option value="0">0</option><option value="1+">1+</option><option value="3+">3+</option><option value="4+">4+</option></select></td>
+                    </tr>
+                `).join('');
+                document.getElementById('dtrTableBody').innerHTML = dtrHtml;
+            };
+
+            // --- Canvas Logic ---
+            const setupCanvas = () => {
+                canvas = document.getElementById('bodyChartCanvas');
+                ctx = canvas.getContext('2d');
+                
+                // Set resolution
+                const resizeCanvas = () => {
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    
+                    // Reset context properties after resize wipes them
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    
+                    redrawHistory(); // Redraw if content exists
+                };
+                
+                window.addEventListener('resize', resizeCanvas);
+                // Delay initial resize to ensure container is rendered
+                setTimeout(resizeCanvas, 100);
+                saveState(); // Save initial blank state
+
+                // Event Listeners (Mouse & Touch)
+                const startDraw = (e) => {
+                    isDrawing = true;
+                    const pos = getPos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    
+                    if (currentTool === 'eraser') {
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.lineWidth = 20;
+                    } else {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.lineWidth = lineWidth;
+                        // Color selection
+                        if(currentTool === 'red') ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+                        else if(currentTool === 'blue') ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
+                        else if(currentTool === 'green') ctx.strokeStyle = 'rgba(34, 197, 94, 0.7)';
+                        else if(currentTool === 'black') ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
+                    }
+                };
+
+                const draw = (e) => {
+                    if (!isDrawing) return;
+                    e.preventDefault();
+                    const pos = getPos(e);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                };
+
+                const stopDraw = () => {
+                    if (isDrawing) {
+                        isDrawing = false;
+                        ctx.closePath();
+                        saveState();
+                        saveData(); // Auto-save canvas data
+                    }
+                };
+
+                canvas.addEventListener('mousedown', startDraw);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDraw);
+                canvas.addEventListener('mouseout', stopDraw);
+                
+                canvas.addEventListener('touchstart', startDraw, {passive: false});
+                canvas.addEventListener('touchmove', draw, {passive: false});
+                canvas.addEventListener('touchend', stopDraw);
+            };
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            };
+
+            const saveState = () => {
+                historyStep++;
+                if (historyStep < history.length) { history.length = historyStep; }
+                history.push(canvas.toDataURL());
+            };
+
+            const redrawHistory = () => {
+                if(history.length > 0 && historyStep >= 0 && history[historyStep]) {
+                    let img = new Image();
+                    img.src = history[historyStep];
+                    // Scale image to fit new canvas size (fixes rotation/resize issues)
+                    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            const undoCanvas = () => {
+                if (historyStep > 0) {
+                    historyStep--;
+                    let img = new Image();
+                    img.src = history[historyStep];
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    };
+                }
+            };
+
+            const clearCanvas = () => {
+                if(!confirm("Clear the drawing?")) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                saveState();
+                saveData();
+            };
+
+            const setTool = (tool) => {
+                currentTool = tool;
+                // UI update
+                ['toolRed', 'toolBlue', 'toolGreen', 'toolBlack', 'toolEraser'].forEach(id => {
+                     const el = document.getElementById(id);
+                     if(el) el.classList.remove('active');
+                });
+                const btnId = 'tool' + tool.charAt(0).toUpperCase() + tool.slice(1);
+                const el = document.getElementById(btnId);
+                if(el) el.classList.add('active');
+            };
+
+            const toggleWidth = () => {
+                lineWidth = lineWidth === 4 ? 8 : 4;
+                const icon = document.querySelector('#toolWidth i');
+                if(lineWidth === 8) {
+                    icon.classList.remove('text-[8px]');
+                    icon.classList.add('text-lg');
+                } else {
+                    icon.classList.remove('text-lg');
+                    icon.classList.add('text-[8px]');
+                }
+            }
+
+
+            // --- Calculations ---
+            const calcGCS = () => {
+                const e = parseInt(document.getElementById('gcsEye').value) || 0;
+                const v = parseInt(document.getElementById('gcsVerbal').value) || 0;
+                const m = parseInt(document.getElementById('gcsMotor').value) || 0;
+                
+                if (e && v && m) {
+                    document.getElementById('gcsTotal').innerText = `Total: ${e + v + m}/15`;
+                } else {
+                    document.getElementById('gcsTotal').innerText = `Total: --/15`;
+                }
+            };
+
+            const calcChronicity = () => {
+                const onsetVal = document.getElementById('dateOnset').value;
+                if (!onsetVal) return;
+                
+                // Parse date relative to local time (append T00:00) to avoid timezone shifts
+                const start = new Date(onsetVal + "T00:00:00");
+                const now = new Date();
+                now.setHours(0,0,0,0); // Normalize now to midnight
+                
+                if(start > now) {
+                    document.getElementById('chronicity').value = "Future Date (Invalid)";
+                    return;
+                }
+
+                const diffTime = Math.abs(now - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                let text = "";
+                if (diffDays < 30) text = `${diffDays} Days (Acute)`;
+                else if (diffDays < 180) text = `${Math.floor(diffDays/30)} Months (Sub-acute)`;
+                else text = `${Math.floor(diffDays/365.25) > 0 ? Math.floor(diffDays/365.25) + ' Years' : Math.floor(diffDays/30) + ' Months'} (Chronic)`;
+                
+                document.getElementById('chronicity').value = text;
+            };
+
+            const calcBMI = () => {
+                const h = parseFloat(document.getElementById('vitHeight').value);
+                const w = parseFloat(document.getElementById('vitWeight').value);
+                if(h && w) {
+                    // Height in m
+                    const hm = h / 100;
+                    const bmi = (w / (hm * hm)).toFixed(1);
+                    document.getElementById('vitBMI').value = bmi;
+                } else {
+                    document.getElementById('vitBMI').value = "--";
+                }
+                saveDataDebounced();
+            };
+
+            const calcMAP = () => {
+                const bp = document.getElementById('vitBP').value;
+                if(bp.includes('/')) {
+                    const parts = bp.split('/');
+                    const sys = parseFloat(parts[0]);
+                    const dias = parseFloat(parts[1]);
+                    if(!isNaN(sys) && !isNaN(dias)) {
+                        const map = ((dias * 2) + sys) / 3;
+                        document.getElementById('vitMAP').value = Math.round(map) + " mmHg";
+                        saveDataDebounced();
+                        return;
+                    }
+                }
+                document.getElementById('vitMAP').value = "--";
+            };
+
+            // --- Data Persistence ---
+            const getAllInputs = () => {
+                return document.querySelectorAll('input, select, textarea');
+            };
+
+            // Main Save Function
+            const saveData = () => {
+                const data = {};
+                // Form Data
+                getAllInputs().forEach(input => {
+                    if (input.type === 'checkbox') data[input.id] = input.checked;
+                    else if (input.id) data[input.id] = input.value;
+                });
+                
+                // Canvas Data
+                data['canvasData'] = canvas.toDataURL();
+
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                
+                // UI Feedback
+                const status = document.getElementById('lastSaved');
+                if(status) {
+                    status.innerText = "Saved";
+                    status.classList.remove('text-slate-400', 'bg-slate-100/50');
+                    status.classList.add('text-green-600', 'bg-green-100/80');
+                    setTimeout(() => {
+                        status.classList.remove('text-green-600', 'bg-green-100/80');
+                        status.classList.add('text-slate-400', 'bg-slate-100/50');
+                        status.innerText = "Ready";
+                    }, 2000);
+                }
+            };
+
+            // Create a debounced version of save for frequent events
+            const saveDataDebounced = debounce(saveData, 500);
+
+            const loadData = () => {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return;
+                
+                const data = JSON.parse(raw);
+                
+                // Load Form
+                getAllInputs().forEach(input => {
+                    if (data[input.id] !== undefined) {
+                        if (input.type === 'checkbox') input.checked = data[input.id];
+                        else input.value = data[input.id];
+                    }
+                });
+
+                // Load Canvas
+                if (data['canvasData']) {
+                    let img = new Image();
+                    img.src = data['canvasData'];
+                    img.onload = () => {
+                        ctx.clearRect(0,0,canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Scale on load
+                        saveState(); // Push loaded state to history
+                    };
+                }
+
+                // Trigger calcs
+                calcGCS();
+                calcChronicity();
+                calcBMI();
+                calcMAP();
+                
+                // Update slider visuals
+                if(data['painScale']) document.getElementById('painVal').innerText = data['painScale'];
+                if(data['fatigueScale']) document.getElementById('fatigueVal').innerText = data['fatigueScale'];
+            };
+
+            const setupAutoSave = () => {
+                getAllInputs().forEach(input => {
+                    // Use standard save for explicit changes (selects, dates)
+                    if(input.tagName === 'SELECT' || input.type === 'checkbox' || input.type === 'date' || input.type === 'range') {
+                         input.addEventListener('change', saveData);
+                    } else {
+                         // Use debounced save for typing
+                         input.addEventListener('keyup', saveDataDebounced);
+                         input.addEventListener('change', saveData); // Catch-all for paste/blur
+                    }
+                });
+            };
+
+            const clearForm = () => {
+                if(!confirm("Clear all data? This cannot be undone.")) return;
+                localStorage.removeItem(storageKey);
+                location.reload();
+            };
+
+            const downloadJSON = () => {
+                const data = localStorage.getItem(storageKey);
+                if(!data) { alert("No data to save"); return; }
+                const blob = new Blob([data], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `NeuroAssess_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+            };
+
+            const importJSON = (input) => {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        // Validate JSON
+                        JSON.parse(e.target.result);
+                        localStorage.setItem(storageKey, e.target.result);
+                        location.reload();
+                    } catch (err) {
+                        alert("Invalid JSON file");
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            // New Export CSV Function
+            const exportToCSV = () => {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) { alert("No data to export"); return; }
+                
+                const data = JSON.parse(raw);
+                let csvContent = "data:text/csv;charset=utf-8,Field,Value\n";
+                
+                // Flattens the object
+                for (const [key, value] of Object.entries(data)) {
+                    if (key === 'canvasData') continue; // Skip image data
+                    // Escape quotes and newlines
+                    const stringValue = String(value).replace(/"/g, '""').replace(/\n/g, ' '); 
+                    csvContent += `${key},"${stringValue}"\n`;
+                }
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `NeuroAssess_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            // Placeholder Functions
+            const openConfigModal = () => {
+                alert("Settings:\nVersion 13.5 (Glass)\nStorage: LocalStorage (Active)");
+            };
+            
+            const syncToSheets = () => {
+                 exportToCSV();
+            };
+
+            // Public API
+            return {
+                init,
+                setTool,
+                toggleWidth,
+                undoCanvas,
+                clearCanvas,
+                calcGCS,
+                calcChronicity,
+                calcBMI,
+                calcMAP,
+                clearForm,
+                downloadJSON,
+                importJSON,
+                openConfigModal,
+                syncToSheets,
+                exportToCSV
+            };
+
+        })();
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', NeuroApp.init);
+    </script>
+</body>
+</html>
