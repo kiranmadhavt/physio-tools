@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- iPad & Mobile Optimization -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Osteopath Assessment Tool</title>
+    
+    <!-- Icons (using simple emoji/text for standalone, but FontAwesome recommended if available) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Light Theme Palette */
+            --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #eef2ff 50%, #fce7f3 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            
+            --primary: #0ea5e9; /* Sky Blue */
+            --primary-dark: #0284c7;
+            --secondary: #334155;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+            
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --header-blur: blur(20px);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Palette */
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            
+            --primary: #38bdf8;
+            --primary-dark: #7dd3fc;
+            --secondary: #94a3b8;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+            
+            --input-bg: rgba(30, 41, 59, 0.8);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation; /* Improves touch response */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0; /* Reset for full bleed header */
+            padding-top: 80px; /* Space for fixed header */
+            padding-bottom: 50px;
+            min-height: 100vh;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- Glassmorphism Utils --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+        }
+
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 0 16px; 
+        }
+
+        /* --- Header --- */
+        .app-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--header-blur);
+            -webkit-backdrop-filter: var(--header-blur);
+            border-bottom: 1px solid var(--glass-border);
+            user-select: none;
+        }
+
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            color: var(--primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .nav-btn:hover { background: rgba(100, 100, 100, 0.1); }
+
+        /* --- Smart Logic Box --- */
+        #osteopathicMapping {
+            display: none;
+            background: rgba(245, 158, 11, 0.15); /* Warm warning tint */
+            border: 1px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            animation: slideIn 0.3s ease-out;
+            backdrop-filter: blur(5px);
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .logic-item { margin-bottom: 4px; display: block; }
+
+        /* --- Sections --- */
+        .section {
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        
+        .section-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--glass-border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .section-header h2 { 
+            margin: 0; 
+            font-size: 1.1rem; 
+            color: var(--primary); 
+            font-weight: 700; 
+        }
+        
+        .section.collapsed .section-content { display: none; }
+        .section.collapsed .section-header { border-bottom: none; }
+        .toggle-icon { transition: transform 0.3s; color: var(--text-muted); }
+        .section.collapsed .toggle-icon { transform: rotate(-90deg); }
+        
+        .section-content { padding: 20px; }
+        
+        .sub-header {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 4px solid var(--purple);
+            opacity: 0.9;
+        }
+
+        /* --- Form Elements --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+        
+        .form-group { margin-bottom: 18px; }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            color: var(--text-muted); 
+            font-size: 0.9rem;
+            user-select: none;
+        }
+        
+        input[type="text"], input[type="number"], input[type="date"], textarea, select {
+            width: 100%; 
+            min-height: 44px; /* Touch target size */
+            padding: 10px 14px; 
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 16px; /* Prevents iOS zoom */
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            appearance: none; 
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        input:focus, textarea:focus, select:focus { 
+            border-color: var(--primary); 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2); 
+        }
+        textarea { min-height: 120px; resize: vertical; }
+
+        /* --- Custom Buttons/Checkboxes --- */
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        
+        .check-btn-label {
+            background-color: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0 16px;
+            height: 44px; /* Touch target */
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-width: 90px;
+            text-align: center;
+            user-select: none;
+            color: var(--text-main);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        
+        .check-btn-input { display: none; }
+        
+        .check-btn-input:checked + .check-btn-label { 
+            background-color: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.4);
+        }
+        
+        /* Variants */
+        .check-btn-input:checked + .check-btn-label.positive { background-color: var(--danger); border-color: var(--danger); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); }
+        .check-btn-input:checked + .check-btn-label.left { background-color: var(--purple); border-color: var(--purple); }
+        .check-btn-input:checked + .check-btn-label.right { background-color: var(--success); border-color: var(--success); }
+
+        /* --- Visual Pain Map --- */
+        .pain-map-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 0 auto;
+        }
+        .pain-region {
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px 5px;
+            min-height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            font-size: 0.85rem;
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            color: var(--text-main);
+        }
+        .pain-region.active { 
+            background-color: var(--danger); 
+            color: white; 
+            border-color: var(--danger);
+            transform: scale(0.98);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* --- Visceral Row --- */
+        .visceral-row {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--success);
+        }
+        
+        /* --- Diagnosis Card --- */
+        .diagnosis-card {
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+        }
+        .diagnosis-title { font-weight: 700; display: block; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-muted); }
+
+        /* --- Sacrum Map --- */
+        .sacrum-map-container {
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            background: var(--input-bg);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        .sacrum-base-row, .sacrum-ila-row {
+            display: flex; justify-content: space-between; width: 100%; gap: 12px;
+        }
+        .sacrum-landmark {
+            flex: 1; padding: 15px 5px; min-height: 60px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: rgba(200, 200, 200, 0.1);
+            text-align: center; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: var(--text-main); font-weight: 600;
+            user-select: none;
+        }
+        .sacrum-landmark:hover { background: rgba(14, 165, 233, 0.1); }
+        .sacrum-landmark.active { 
+            background-color: var(--primary); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+        .sacrum-body {
+            width: 70%; height: 40px; 
+            background: rgba(100,100,100,0.1); 
+            border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 0.8rem; color: var(--text-muted); letter-spacing: 2px;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        }
+
+        /* --- Zink Visuals --- */
+        .zink-stack {
+            display: flex; flex-direction: column; width: 100%; max-width: 320px; margin: 0 auto; gap: 8px;
+        }
+        .zink-level {
+            display: flex; 
+            border: 1px solid var(--glass-border); 
+            border-radius: 10px; 
+            overflow: hidden; 
+            background: var(--input-bg);
+        }
+        .zink-btn {
+            flex: 1; padding: 12px; text-align: center; font-size: 0.85rem; cursor: pointer; transition: 0.2s;
+            user-select: none;
+            color: var(--text-main);
+        }
+        .zink-btn:active { background: rgba(0,0,0,0.05); }
+        .zink-btn.active-l { background: var(--purple); color: white; }
+        .zink-btn.active-r { background: var(--success); color: white; }
+        .zink-label {
+            width: 50px; display: flex; align-items: center; justify-content: center; 
+            font-weight: 800; background: rgba(100,100,100,0.1); font-size: 0.8rem; color: var(--text-muted);
+        }
+
+        /* --- Buttons --- */
+        .action-row {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            min-height: 48px;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .action-btn:active { transform: scale(0.98); }
+        
+        .btn-copy { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); 
+            color: white; 
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+        .btn-reset { 
+            background: rgba(255,255,255,0.5); 
+            color: var(--danger); 
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Toast */
+        .toast {
+            visibility: hidden; min-width: 250px; 
+            background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px);
+            color: #fff; text-align: center; border-radius: 50px; padding: 16px 24px;
+            position: fixed; z-index: 1000; left: 50%; bottom: 40px; 
+            transform: translateX(-50%) translateY(20px); 
+            font-size: 15px; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .toast.show { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* Helpers */
+        .text-center { text-align: center; }
+        .w-full { width: 100%; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Fixed Glass Header -->
+    <header class="app-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="index.html" class="nav-btn" aria-label="Home">
+                <i class="fas fa-home"></i> 🏠
+            </a>
+            <span class="header-title">Osteopath</span>
+        </div>
+        <button id="themeToggle" class="nav-btn" aria-label="Toggle Theme">
+            🌓
+        </button>
+    </header>
+
+    <div class="container">
+        
+        <!-- Smart Logic/Mapping Box -->
+        <div id="osteopathicMapping" class="glass-panel">
+            🧬 <strong>Analysis:</strong> <div id="mappingText" style="margin-top:5px;"></div>
+        </div>
+
+        <form id="assessmentForm">
+            
+            <!-- SECTION 1: SAFETY & PAIN -->
+            <div class="section glass-panel">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2>🚨 Safety & Complaint</h2>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label style="color: var(--danger);">Red Flags (Mandatory)</label>
+                        <div class="checkbox-group">
+                            <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input" name="redFlags" value="Cauda Equina">Cauda Equina</label>
+                            <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input" name="redFlags" value="Fracture">Fracture</label>
+                            <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input" name="redFlags" value="Night Pain">Night Pain</label>
+                            <label class="check-btn-label right"><input type="checkbox" class="check-btn-input smart-input" name="redFlags" value="Cleared" checked>Cleared</label>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div>
+                             <div class="form-group"><label>Patient Name</label><input type="text" name="patientName" class="smart-input" placeholder="Name"></div>
+                             <div class="form-group"><label>Date</label><input type="date" name="visitDate" class="smart-input"></div>
+                             <div class="form-group"><label>Vitals</label><input type="text" name="vitals" class="smart-input" placeholder="BP, HR, Temp"></div>
+                        </div>
+                        <div>
+                            <label class="text-center">Pain Map</label>
+                            <div class="pain-map-grid">
+                                <div class="pain-region" data-area="Cervical">C-Spine</div>
+                                <div class="pain-region" data-area="T-Spine">T-Spine</div>
+                                <div class="pain-region" data-area="L-Spine">L-Spine</div>
+                                <div class="pain-region" data-area="L Shoulder">L Shldr</div>
+                                <div class="pain-region" data-area="Ribs">Ribs</div>
+                                <div class="pain-region" data-area="R Shoulder">R Shldr</div>
+                                <div class="pain-region" data-area="Pelvis">Pelvis</div>
+                                <div class="pain-region" data-area="Sacrum">Sacrum</div>
+                                <div class="pain-region" data-area="Hip">Hip</div>
+                            </div>
+                            <input type="hidden" name="painLocations" id="painLocationsInput" class="smart-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: ZINK PATTERNS & POSTURE -->
+            <div class="section glass-panel">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2>🌀 Zink Patterns & Posture</h2>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="grid-2">
+                        <div>
+                            <p style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-top:0;">Fascial Rotation Preference</p>
+                            <div class="zink-stack">
+                                <!-- OA -->
+                                <div class="zink-level">
+                                    <div class="zink-label">OA</div>
+                                    <div class="zink-btn" data-level="OA" data-rot="L">Rot Left</div>
+                                    <div class="zink-btn" data-level="OA" data-rot="R">Rot Right</div>
+                                </div>
+                                <!-- CT -->
+                                <div class="zink-level">
+                                    <div class="zink-label">C-T</div>
+                                    <div class="zink-btn" data-level="CT" data-rot="L">Rot Left</div>
+                                    <div class="zink-btn" data-level="CT" data-rot="R">Rot Right</div>
+                                </div>
+                                <!-- TL -->
+                                <div class="zink-level">
+                                    <div class="zink-label">T-L</div>
+                                    <div class="zink-btn" data-level="TL" data-rot="L">Rot Left</div>
+                                    <div class="zink-btn" data-level="TL" data-rot="R">Rot Right</div>
+                                </div>
+                                <!-- LS -->
+                                <div class="zink-level">
+                                    <div class="zink-label">L-S</div>
+                                    <div class="zink-btn" data-level="LS" data-rot="L">Rot Left</div>
+                                    <div class="zink-btn" data-level="LS" data-rot="R">Rot Right</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="zinkPattern" id="zinkPatternInput" class="smart-input">
+                            <div id="zinkResult" style="text-align:center; font-weight:bold; margin-top:8px; font-size:0.9rem; color:var(--primary);"></div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label>Static Posture</label>
+                                <select name="postureType" class="smart-input">
+                                    <option value="">Select Posture...</option>
+                                    <option>Kypholordotic</option>
+                                    <option>Flat Back</option>
+                                    <option>Sway Back</option>
+                                    <option>Military</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Leg Length</label>
+                                <div class="checkbox-group">
+                                    <label class="check-btn-label"><input type="radio" name="legLength" value="Equal" class="check-btn-input smart-input">Equal</label>
+                                    <label class="check-btn-label"><input type="radio" name="legLength" value="Short Left" class="check-btn-input smart-input">Short L</label>
+                                    <label class="check-btn-label"><input type="radio" name="legLength" value="Short Right" class="check-btn-input smart-input">Short R</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: NEUROLOGICAL -->
+            <div class="section glass-panel">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2>⚡ Neurological Screen</h2>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Dermatomes</label>
+                            <select name="neuroDerm" class="smart-input">
+                                <option value="Intact">Intact</option>
+                                <option value="C5/C6 Diminished">C5/6 Diminished</option>
+                                <option value="C7/C8 Diminished">C7/8 Diminished</option>
+                                <option value="L4 Diminished">L4 Diminished</option>
+                                <option value="L5 Diminished">L5 Diminished</option>
+                                <option value="S1 Diminished">S1 Diminished</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Myotomes</label>
+                            <select name="neuroMyo" class="smart-input">
+                                <option value="5/5 Global">5/5 Global</option>
+                                <option value="Weak Grip">Weak Grip</option>
+                                <option value="Weak DF (L4)">Weak DF (L4)</option>
+                                <option value="Weak EHL (L5)">Weak EHL (L5)</option>
+                                <option value="Weak PF (S1)">Weak PF (S1)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Reflexes (DTR)</label>
+                            <div class="checkbox-group">
+                                <label class="check-btn-label"><input type="checkbox" name="dtr" value="Hypo Knee" class="check-btn-input smart-input">Hypo Knee</label>
+                                <label class="check-btn-label"><input type="checkbox" name="dtr" value="Hypo Ankle" class="check-btn-input smart-input">Hypo Ankle</label>
+                                <label class="check-btn-label right"><input type="checkbox" name="dtr" value="Normal 2+" class="check-btn-input smart-input" checked>Normal</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: SPINAL & VISCERAL -->
+            <div class="section glass-panel">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2>🦴 Spinal & Visceral</h2>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <!-- CRANIAL -->
+                    <div class="sub-header">Cranial (SBS & CRI)</div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>CRI Rate/Amp</label>
+                            <select name="cranialCRI" class="smart-input">
+                                <option value="">Select...</option>
+                                <option>Normal (10-14)</option>
+                                <option>Low/Sluggish</option>
+                                <option>High/Racing</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>SBS Strain</label>
+                            <select name="cranialSBS" class="smart-input">
+                                <option value="">Select...</option>
+                                <option>Torsion</option>
+                                <option>SB/Rotation</option>
+                                <option>Vertical Strain</option>
+                                <option>Lateral Strain</option>
+                                <option>Compression</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- CERVICAL -->
+                    <div class="sub-header">Cervical Spine</div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>OA / AA</label>
+                            <select name="cervicalOA" class="spine-select smart-input" data-segment="OA">
+                                <option value="">-</option>
+                                <option>OA ESRR</option><option>OA ESLR</option>
+                                <option>OA FSRR</option><option>OA FSLR</option>
+                            </select>
+                            <div class="checkbox-group" style="margin-top:8px;">
+                                <label class="check-btn-label"><input type="radio" name="cervicalAA" class="check-btn-input spine-radio smart-input" value="Rot Left">AA L</label>
+                                <label class="check-btn-label"><input type="radio" name="cervicalAA" class="check-btn-input spine-radio smart-input" value="Rot Right">AA R</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                             <label>Lower Cervical (Tap)</label>
+                             <div style="display:grid; grid-template-columns:30px 1fr 1fr; gap:5px; font-size:0.8rem;">
+                                <span style="display:flex; align-items:center;">C3</span><select name="c3_d" class="smart-input"><option value="">-</option><option>E</option><option>F</option></select><select name="c3_s" class="smart-input"><option value="">-</option><option>L</option><option>R</option></select>
+                                <span style="display:flex; align-items:center;">C4</span><select name="c4_d" class="smart-input"><option value="">-</option><option>E</option><option>F</option></select><select name="c4_s" class="smart-input"><option value="">-</option><option>L</option><option>R</option></select>
+                                <span style="display:flex; align-items:center;">C5</span><select name="c5_d" class="smart-input"><option value="">-</option><option>E</option><option>F</option></select><select name="c5_s" class="smart-input"><option value="">-</option><option>L</option><option>R</option></select>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- THORACIC & ANS -->
+                    <div class="sub-header">Thoracic (ANS Tone)</div>
+                    <div class="visceral-row">
+                        <strong style="color:var(--success)">T5 - T9 (Sympathetic)</strong>
+                        <div class="grid-2" style="margin-top:8px;">
+                            <select name="thoracicT5T9" class="smart-input"><option value="">Mechanics...</option><option>Type 1</option><option>Type 2 ERS/FRS</option></select>
+                            <div class="checkbox-group">
+                                <label class="check-btn-label"><input type="checkbox" name="visceral" value="Stomach (T5-9)" class="check-btn-input smart-input">Stomach</label>
+                                <label class="check-btn-label"><input type="checkbox" name="visceral" value="Liver (T5-9)" class="check-btn-input smart-input">Liver</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- LUMBAR -->
+                    <div class="sub-header">Lumbar & L5</div>
+                    <div class="grid-2">
+                         <div class="form-group"><label>L1-L4</label><select name="lumbarUpper" class="smart-input"><option value="">-</option><option>Type 1</option><option>Type 2 F</option><option>Type 2 E</option></select></div>
+                         <div class="form-group"><label>L5</label><input type="text" name="l5Diagnosis" id="l5Diagnosis" class="smart-input" placeholder="Auto-inferred..."></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: PELVIC & VISUAL SACRUM -->
+            <div class="section glass-panel">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2>📐 Visual Sacrum & Pelvis</h2>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    
+                    <!-- Innominate -->
+                    <div class="sub-header">Innominate</div>
+                    <div class="grid-2">
+                        <div class="diagnosis-card">
+                            <span class="diagnosis-title">Left Hemi</span>
+                            <div class="checkbox-group">
+                                <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input innom-chk" name="innominateLeft" value="Ant Rot">Ant</label>
+                                <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input innom-chk" name="innominateLeft" value="Post Rot">Post</label>
+                                <label class="check-btn-label positive"><input type="checkbox" class="check-btn-input smart-input" name="innominateLeft" value="Upslip">Up</label>
+                            </div>
+                        </div>
+                        <div class="diagnosis-card">
+                            <span class="diagnosis-title">Right Hemi</span>
+                            <div class="checkbox-group">
+                                <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input innom-chk" name="innominateRight" value="Ant Rot">Ant</label>
+                                <label class="check-btn-label"><input type="checkbox" class="check-btn-input smart-input innom-chk" name="innominateRight" value="Post Rot">Post</label>
+                                <label class="check-btn-label positive"><input type="checkbox" class="check-btn-input smart-input" name="innominateRight" value="Upslip">Up</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sacrum Visual Map -->
+                    <div class="sub-header">Sacral Diagnosis Map</div>
+                    <div class="sacrum-map-container">
+                        <div class="sacrum-base-row">
+                            <div class="sacrum-landmark" data-target="sacralBase" data-value="L Deep">L Base<br><small>Deep</small></div>
+                            <div class="sacrum-landmark" data-target="sacralBase" data-value="R Deep">R Base<br><small>Deep</small></div>
+                        </div>
+                        <div class="sacrum-body">SACRUM</div>
+                        <div class="sacrum-ila-row">
+                            <div class="sacrum-landmark" data-target="sacralILA" data-value="L Post/Inf">L ILA<br><small>Post/Inf</small></div>
+                            <div class="sacrum-landmark" data-target="sacralILA" data-value="R Post/Inf">R ILA<br><small>Post/Inf</small></div>
+                        </div>
+                        <input type="hidden" name="sacralBase" id="sacralBaseInput" class="smart-input">
+                        <input type="hidden" name="sacralILA" id="sacralILAInput" class="smart-input">
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:20px; text-align:center;">
+                        <label>Inferred Diagnosis</label>
+                        <div id="sacralInference" style="color:var(--primary-dark); font-weight:bold; font-size:1.1rem; padding:10px; border-radius:8px; background:rgba(255,255,255,0.3);">-</div>
+                        <input type="hidden" name="sacralDiagnosis" id="sacralDiagnosisInput" class="smart-input">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SECTION 6: SUMMARY -->
+            <div class="section glass-panel">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2>📝 Summary</h2>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <textarea id="smartAssessment" name="smartAssessment" readonly></textarea>
+                    <div class="action-row">
+                        <button type="button" class="action-btn btn-reset" id="resetBtn">Reset</button>
+                        <button type="button" class="action-btn btn-copy" id="copyBtn">Copy Report</button>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div id="toast" class="toast">Report Copied to Clipboard!</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            setupMappingLogic();
+            setupPainMap();
+            setupSacrumMap();
+            setupZinkMap();
+            setupInnominateLogic();
+            setupSmartAssessment();
+            setupActionButtons();
+            
+            // Set today's date
+            const dateInput = document.querySelector('input[name="visitDate"]');
+            if(dateInput) dateInput.valueAsDate = new Date();
+        });
+
+        // Theme Toggle Logic
+        function initTheme() {
+            const toggle = document.getElementById('themeToggle');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Set initial state
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+
+            toggle.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                if (current === 'dark') {
+                    document.documentElement.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+        }
+
+        function setupActionButtons() {
+            // COPY BUTTON
+            document.getElementById('copyBtn').addEventListener('click', function() {
+                const text = document.getElementById('smartAssessment').value;
+                if (!text) return;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(showToast);
+                } else {
+                    const textarea = document.getElementById('smartAssessment');
+                    textarea.select();
+                    document.execCommand('copy');
+                    showToast();
+                }
+            });
+
+            // RESET BUTTON
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                if(!confirm('Reset entire form?')) return;
+                
+                document.getElementById('assessmentForm').reset();
+                
+                // Clear Visual States
+                document.querySelectorAll('.pain-region').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.sacrum-landmark').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.zink-btn').forEach(el => {
+                    el.classList.remove('active-l');
+                    el.classList.remove('active-r');
+                });
+                
+                // Reset Text Outputs
+                document.getElementById('zinkResult').innerText = '';
+                document.getElementById('sacralInference').innerText = '-';
+                document.getElementById('smartAssessment').value = '';
+                
+                // Hide Logic Box
+                document.getElementById('osteopathicMapping').style.display = 'none';
+                
+                // Reset hidden inputs
+                document.querySelectorAll('input[type="hidden"]').forEach(i => i.value = '');
+                
+                // Reset Date
+                const dateInput = document.querySelector('input[name="visitDate"]');
+                if(dateInput) dateInput.valueAsDate = new Date();
+            });
+        }
+
+        function showToast() {
+            const t = document.getElementById('toast');
+            t.className = "toast show";
+            setTimeout(function(){ t.className = t.className.replace("show", ""); }, 3000);
+        }
+
+        // --- GLOBAL LOGIC CHECKER ---
+        function runLogicChecks() {
+            const mapBox = document.getElementById('osteopathicMapping');
+            const mapText = document.getElementById('mappingText');
+            let msgs = [];
+
+            // 1. Pain Map Checks
+            const activePain = Array.from(document.querySelectorAll('.pain-region.active')).map(el => el.dataset.area);
+            if (activePain.includes('R Shldr')) msgs.push("<span>&bull; R Shoulder Pain: Check Liver/GB (T5-9) [Viscero-Somatic]</span>");
+            if (activePain.includes('L Shoulder')) msgs.push("<span>&bull; L Shoulder Pain: Check Stomach/Heart [Viscero-Somatic]</span>");
+            if (activePain.includes('Ribs')) msgs.push("<span>&bull; Rib Pain: Screen Respiratory Diaphragm & Thoracic Spine</span>");
+
+            // 2. Innominate Checks
+            const checkedInnoms = Array.from(document.querySelectorAll('.innom-chk:checked')).map(c => c.value + c.name);
+            if (checkedInnoms.some(x => x.includes('Post Rot') && x.includes('Right'))) msgs.push("<span>&bull; R Post Rot &rarr; Expect <strong>Short Right Leg</strong></span>");
+            if (checkedInnoms.some(x => x.includes('Ant Rot') && x.includes('Right'))) msgs.push("<span>&bull; R Ant Rot &rarr; Expect <strong>Long Right Leg</strong></span>");
+            if (checkedInnoms.some(x => x.includes('Post Rot') && x.includes('Left'))) msgs.push("<span>&bull; L Post Rot &rarr; Expect <strong>Short Left Leg</strong></span>");
+            if (checkedInnoms.some(x => x.includes('Ant Rot') && x.includes('Left'))) msgs.push("<span>&bull; L Ant Rot &rarr; Expect <strong>Long Left Leg</strong></span>");
+
+            // 3. Leg Length to Sacrum Logic
+            const leg = document.querySelector('input[name="legLength"]:checked')?.value;
+            if(leg === 'Short Right') msgs.push("<span>&bull; Short R Leg: Sacral base often <strong>Deep/Anterior on Right</strong></span>");
+            if(leg === 'Short Left') msgs.push("<span>&bull; Short L Leg: Sacral base often <strong>Deep/Anterior on Left</strong></span>");
+
+            // 4. Zink Compensation
+            const zinkVal = document.getElementById('zinkPatternInput').value;
+            if(zinkVal && zinkVal.includes('Traumatic')) msgs.push("<span>&bull; Uncompensated Zink: Treat <strong>Transition Zones (OA/CT/TL/LS)</strong> first</span>");
+
+            // Display
+            if (msgs.length > 0) {
+                mapText.innerHTML = msgs.map(m => `<span class="logic-item">${m}</span>`).join('');
+                mapBox.style.display = 'block';
+            } else {
+                mapBox.style.display = 'none';
+            }
+        }
+
+        // --- ZINK LOGIC ---
+        function setupZinkMap() {
+            const btns = document.querySelectorAll('.zink-btn');
+            const resultDiv = document.getElementById('zinkResult');
+            const hiddenInput = document.getElementById('zinkPatternInput');
+            let pattern = { OA:'', CT:'', TL:'', LS:'' };
+
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const level = btn.dataset.level;
+                    const rot = btn.dataset.rot;
+                    document.querySelectorAll(`.zink-btn[data-level="${level}"]`).forEach(b => b.className = 'zink-btn');
+                    btn.classList.add(rot === 'L' ? 'active-l' : 'active-r');
+                    pattern[level] = rot;
+                    analyzeZink();
+                });
+            });
+
+            function analyzeZink() {
+                const p = [pattern.OA, pattern.CT, pattern.TL, pattern.LS].join('');
+                if (p.length < 4) return;
+                let msg = (p === "LRLR" || p === "RLRL") ? "Compensatory (Good Prognosis)" : "Traumatic / Uncompensated";
+                resultDiv.innerHTML = msg;
+                hiddenInput.value = p + " (" + msg + ")";
+                hiddenInput.dispatchEvent(new Event('input'));
+                runLogicChecks();
+            }
+        }
+
+        // --- SACRUM LOGIC ---
+        function setupSacrumMap() {
+            const landmarks = document.querySelectorAll('.sacrum-landmark');
+            const baseInput = document.getElementById('sacralBaseInput');
+            const ilaInput = document.getElementById('sacralILAInput');
+            const diagInput = document.getElementById('sacralDiagnosisInput');
+            const diagDisplay = document.getElementById('sacralInference');
+            const l5Input = document.getElementById('l5Diagnosis');
+
+            landmarks.forEach(lm => {
+                lm.addEventListener('click', () => {
+                    const target = lm.dataset.target;
+                    const value = lm.dataset.value;
+                    
+                    if (target === 'sacralBase') {
+                        document.querySelectorAll('.sacrum-base-row .sacrum-landmark').forEach(el => el.classList.remove('active'));
+                        baseInput.value = value;
+                    } else {
+                        document.querySelectorAll('.sacrum-ila-row .sacrum-landmark').forEach(el => el.classList.remove('active'));
+                        ilaInput.value = value;
+                    }
+                    lm.classList.add('active');
+                    
+                    // Logic
+                    const b = baseInput.value;
+                    const i = ilaInput.value;
+                    let diag = "";
+                    let l5 = "";
+
+                    if (b && i) {
+                        if (b.includes('L') && i.includes('R')) {
+                            diag = "R on R (Fwd) OR R on L (Bwd)";
+                            l5 = "L5 Rot: Left (Opposite)"; 
+                        } else if (b.includes('R') && i.includes('L')) {
+                            diag = "L on L (Fwd) OR L on R (Bwd)";
+                            l5 = "L5 Rot: Right (Opposite)";
+                        } 
+                        else if (b.includes('L') && i.includes('L')) {
+                            diag = "Left Inf. Shear";
+                            l5 = "L5 Rot: Right"; 
+                        }
+                        else if (b.includes('R') && i.includes('R')) {
+                             diag = "Right Inf. Shear";
+                             l5 = "L5 Rot: Left";
+                        }
+                    }
+                    
+                    if(diag) {
+                        diagDisplay.innerText = diag;
+                        diagInput.value = diag;
+                        if(l5) { l5Input.value = l5; l5Input.dispatchEvent(new Event('input')); }
+                        diagInput.dispatchEvent(new Event('input'));
+                    }
+                });
+            });
+        }
+
+        function setupInnominateLogic() {
+            const inputs = document.querySelectorAll('.innom-chk, input[name="legLength"]');
+            inputs.forEach(i => i.addEventListener('change', runLogicChecks));
+        }
+
+        function setupPainMap() {
+            const regions = document.querySelectorAll('.pain-region');
+            const input = document.getElementById('painLocationsInput');
+            regions.forEach(r => {
+                r.addEventListener('click', () => {
+                    r.classList.toggle('active');
+                    const active = Array.from(document.querySelectorAll('.pain-region.active')).map(el => el.dataset.area);
+                    input.value = active.join(', ');
+                    input.dispatchEvent(new Event('input'));
+                    runLogicChecks();
+                });
+            });
+        }
+
+        function setupMappingLogic() { /* Placeholder */ }
+
+        function setupSmartAssessment() {
+            const inputs = document.querySelectorAll('.smart-input, .spine-select, .spine-radio, input, select');
+            inputs.forEach(i => i.addEventListener('input', generate));
+            inputs.forEach(i => i.addEventListener('change', generate));
+        }
+
+        function generate() {
+            const getVal = n => {
+                const radios = document.querySelectorAll(`[name="${n}"][type="radio"]`);
+                if (radios.length > 0) {
+                    const checked = document.querySelector(`[name="${n}"]:checked`);
+                    return checked ? checked.value : '';
+                }
+                const el = document.querySelector(`[name="${n}"]`);
+                return el ? el.value : '';
+            };
+            
+            const getChk = n => Array.from(document.querySelectorAll(`[name="${n}"]:checked`)).map(c=>c.value).join(', ');
+            
+            let txt = `Subjective:\nPatient: ${getVal('patientName')} | Date: ${getVal('visitDate')}\nComplaint: ${getVal('painLocations')}\nRed Flags: ${getChk('redFlags') || 'None'}\n\n`;
+            
+            txt += `Objective:\n`;
+            const zink = getVal('zinkPattern');
+            const legLength = getVal('legLength');
+            if(zink || legLength) txt += `Zink: ${zink} | Posture: ${getVal('postureType')} | Leg: ${legLength}\n`;
+            
+            const derm = getVal('neuroDerm');
+            const myo = getVal('neuroMyo');
+            const dtr = getChk('dtr');
+            if(derm !== 'Intact' || myo !== '5/5 Global' || (dtr && !dtr.includes('Normal'))) {
+                txt += `Neuro: Derm[${derm}] Myo[${myo}] DTR[${dtr}]\n`;
+            }
+
+            const cranial = getVal('cranialSBS');
+            if(cranial) txt += `Cranial: ${cranial} (CRI: ${getVal('cranialCRI')})\n`;
+            
+            const spine = [];
+            if(getVal('cervicalOA')) spine.push(`OA:${getVal('cervicalOA')}`);
+            if(getVal('cervicalAA')) spine.push(`AA:${getVal('cervicalAA')}`);
+            
+            ['c3', 'c4', 'c5'].forEach(seg => {
+                const d = getVal(seg + '_d');
+                const s = getVal(seg + '_s');
+                if(d && s) spine.push(`${seg.toUpperCase()}${d}S${s}`);
+            });
+
+            if(getVal('thoracicT5T9')) spine.push(`T5-9:${getVal('thoracicT5T9')}`);
+            if(getVal('l5Diagnosis')) spine.push(`L5:${getVal('l5Diagnosis')}`);
+            if(spine.length) txt += `Spine: ${spine.join(', ')}\n`;
+            
+            const visc = getChk('visceral');
+            if(visc) txt += `Visceral: ${visc}\n`;
+            
+            const sacrum = getVal('sacralDiagnosis');
+            if(sacrum) txt += `Sacrum: ${sacrum}\n`;
+            
+            const innoms = [];
+            const innomL = Array.from(document.querySelectorAll('input[name="innominateLeft"]:checked')).map(c=>c.value);
+            const innomR = Array.from(document.querySelectorAll('input[name="innominateRight"]:checked')).map(c=>c.value);
+            if(innomL.length) innoms.push(`L: ${innomL.join('/')}`);
+            if(innomR.length) innoms.push(`R: ${innomR.join('/')}`);
+            if(innoms.length) txt += `Pelvis: ${innoms.join(', ')}`;
+            
+            document.getElementById('smartAssessment').value = txt;
+        }
+
+        function toggleSection(h) { h.parentElement.classList.toggle('collapsed'); }
+    </script>
+</body>
+</html>
